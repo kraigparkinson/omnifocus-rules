@@ -211,6 +211,12 @@ end script
 
 script install
 	property parent : Task(me)
+
+	tell installScriptLibraries to exec:{ }
+end script
+
+script installAll
+	property parent : Task(me)
 	
 	tell installScriptLibraries to exec:{}
 	tell installHazelScript to exec:{}
@@ -226,7 +232,7 @@ script BuildTests
 	
 	owarn("Due to bugs in OS X Yosemite, building tests requires ASUnit to be installed.")
 	tell install to exec:{}
-	tell BuildRules to exec:{}
+--	tell BuildRules to exec:{}
 	
 	makeScriptBundle from "test/Test OmniFocus Rules Engine.applescript" at "test" with overwriting
 	makeScriptBundle from "test/Test Default OmniFocus Rules Library.applescript" at "test" with overwriting
