@@ -5,13 +5,94 @@
 	@copyright 2015 kraigparkinson
 *)
 property domain : script "com.kraigparkinson/OmniFocusDomain"
-property cfr : script "com.kraigparkinson/Creating Flow with OmniFocus Rules"
+property cfr : script "com.kraigparkinson/Default OmniFocus Rules Library"
 
 property parent : script "com.lifepillar/ASUnit"
-property suite : makeTestSuite("OmniFocus Rules Engine")
+property suite : makeTestSuite("Default OmniFocus Rules Library")
 
 
 my autorun(suite)
+
+script |Has Children Specification|
+	property parent : TestSet(me)
+
+	property taskFixtures : { }
+	property contextFixtures : { }
+
+	on setUp()
+		set taskFixtures to { }
+		set contextFixtures to { }
+	end setUp
+
+	on tearDown()
+		tell application "OmniFocus"
+			repeat with aTask in my taskFixtures
+				delete aTask
+			end repeat
+		end tell
+		tell application "OmniFocus"
+			repeat with aContext in my contextFixtures
+				delete aContext
+			end repeat
+		end tell
+	end tearDown
+
+	on createInboxTask(transportText)
+		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
+		set end of taskFixtures to newTask		
+		return newTask 		
+	end createInboxTask
+
+	script |Should pass when has a child|
+		set aParentTask to createInboxTask("Test Parent")
+		set aChildTask to createInboxTask("Test Child")
+
+		tell application "OmniFocus"
+			set aChildTask to end of aParentTask's tasks
+
+			assertEqual(1, aParentTask's number of tasks)
+		end tell
+	end script
+end script
+
+script |Add OmniOutliner Template as Children|
+	property parent : TestSet(me)
+
+	property taskFixtures : { }
+	property contextFixtures : { }
+
+	on setUp()
+		set taskFixtures to { }
+		set contextFixtures to { }
+	end setUp
+
+	on tearDown()
+		tell application "OmniFocus"
+			repeat with aTask in my taskFixtures
+				delete aTask
+			end repeat
+		end tell
+		tell application "OmniFocus"
+			repeat with aContext in my contextFixtures
+				delete aContext
+			end repeat
+		end tell
+	end tearDown
+
+	on createInboxTask(transportText)
+		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
+		set end of taskFixtures to newTask		
+		return newTask 		
+	end createInboxTask
+
+	script |Should load file when present|
+		tell application "Finder"
+			set aFile to file "build/Rule Sets/omnirulefile.scptd"
+		end tell 
+		
+		assertNotMissing(aFile, "Should have loaded the file.")
+	end script
+end script
 
 script |Tidy Incomplete Consideration Tasks Rule| 
 	property parent : TestSet(me)
@@ -60,6 +141,7 @@ script |Tidy Incomplete Consideration Tasks Rule|
 		end tell
 		
 		set aRule to cfr's TidyConsiderationsRule's constructRule()
+		tell aRule to run
 		
 		set matchingResult to aRule's matchTask(aTask, { })
 		
@@ -72,6 +154,7 @@ script |Tidy Incomplete Consideration Tasks Rule|
 		set aTask to createInboxTask("Consider foo")
 		
 		set aRule to cfr's TidyConsiderationsRule's constructRule()
+		tell aRule to run
 				
 		set matchingResult to aRule's matchTask(aTask, { })
 		
@@ -85,6 +168,7 @@ script |Tidy Incomplete Consideration Tasks Rule|
 		set aContext to domain's ContextRepository's findByName("Considerations")
 		
 		set aRule to cfr's TidyConsiderationsRule's constructRule()
+		tell aRule to run
 				
 		tell aRule to processTask(aTask, { })
 		
@@ -141,6 +225,7 @@ script |Add Daily Repeat Rule|
 		set aTask to createInboxTask("Consider (Add daily repeat)")
 				
 		set aRule to cfr's AddDailyRepeatRule's constructRule()
+		tell aRule to run
 		
 		set matchingResult to aRule's matchTask(aTask, { })
 		
@@ -153,6 +238,7 @@ script |Add Daily Repeat Rule|
 		set aTask to createInboxTask("Consider foo")
 		
 		set aRule to cfr's AddDailyRepeatRule's constructRule()
+		tell aRule to run
 				
 		set matchingResult to aRule's matchTask(aTask, { })
 		
@@ -165,6 +251,7 @@ script |Add Daily Repeat Rule|
 		set aTask to createInboxTask("Consider (Add daily repeat)")
 		
 		set aRule to cfr's AddDailyRepeatRule's constructRule()
+		tell aRule to run
 				
 		tell aRule to processTask(aTask, { })
 		
@@ -224,6 +311,7 @@ script |Expired Meeting Preparation Rule|
 		end tell
 				
 		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
+		tell aRule to run
 		
 		set matchingResult to aRule's matchTask(aTask, { })
 		
@@ -239,6 +327,7 @@ script |Expired Meeting Preparation Rule|
 		end tell
 				
 		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
+		tell aRule to run
 		
 		set matchingResult to aRule's matchTask(aTask, { })
 		
@@ -254,6 +343,7 @@ script |Expired Meeting Preparation Rule|
 		end tell
 		
 		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
+		tell aRule to run
 				
 		set matchingResult to aRule's matchTask(aTask, { })
 		
@@ -269,6 +359,7 @@ script |Expired Meeting Preparation Rule|
 		end tell
 		
 		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
+		tell aRule to run
 				
 		tell aRule to processTask(aTask, { })
 		
@@ -316,6 +407,7 @@ script |Evernote TaskClone Preparation Rule|
 		set aTask to createInboxTask("|EN| Catch up with Dave")
 		
 		set aRule to cfr's EvernoteTaskClonePreparationRule's constructRule()
+		tell aRule to run
 		
 		set matchingResult to aRule's matchTask(aTask, { })
 		
@@ -329,6 +421,7 @@ script |Evernote TaskClone Preparation Rule|
 		set aTask to createInboxTask("Catch up with Dave |EN|")
 				
 		set aRule to cfr's EvernoteTaskClonePreparationRule's constructRule()
+		tell aRule to run
 		
 		set matchingResult to aRule's matchTask(aTask, { })
 		
@@ -341,6 +434,7 @@ script |Evernote TaskClone Preparation Rule|
 		set aTask to createInboxTask("|EN| Catch up with Dave")
 		
 		set aRule to cfr's EvernoteTaskClonePreparationRule's constructRule()
+		tell aRule to run
 				
 		tell aRule to processTask(aTask, { })
 		
@@ -349,4 +443,6 @@ script |Evernote TaskClone Preparation Rule|
 		end tell
 		
 	end script
+	
+	
 end script

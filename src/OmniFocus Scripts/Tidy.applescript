@@ -1,31 +1,40 @@
+use AppleScript version "2.4"
+use Rules : script "com.kraigparkinson/OmniFocus Rules Engine"
+use cfr : script "com.kraigparkinson/Default OmniFocus Rules Library"
 
-property rules : script "com.kraigparkinson/OmniFocus Rules Engine"
-property cfr : script "com.kraigparkinson/Creating Flow with OmniFocus Rules"
+property parent : Rules
 
-on main()
-	script TidyRuleSet
-		property parent : rules's AbstractOmniFocusRuleSet
+property suite : Rules's makeRuleSuite("Creating Flow with OmniFocus")
+
+script StripSourceTokens
+	property parent : Rules's RuleBase
+	property name : "Strip source tokens"
 	
-		on constructRuleSet()
-			set aRuleSet to continue constructRuleSet()		
-			set theRules to { }
-			set theRules's end to cfr's ExpiredMeetingPreparationRule's constructRule()
-			set theRules's end to cfr's AddDailyRepeatRule's constructRule()
-			set theRules's end to cfr's TidyConsiderationsRule's constructRule()
-			set theRules's end to cfr's ExpiredCheckMeetingParticipationRule's constructRule()
-		
-			tell aRuleSet to addTargetConfig(rules's UserSpecifiedTasks's construct(), theRules )
-		
-			return aRuleSet
-		end constructRuleSet
-	end script 
+	set aToken to "|GC|" & space
+	
+	match by (taskName()'s startsWith(aToken)'s getContents())
+	
+	set aCommand to Rules's StripTokenFromTaskNameCommand's constructCommand()
+	set aCommand's token to aToken
+	
+	command thru (aCommand)	
+end script
 
-	log "Tidy called."
+script TidySet
+	property parent : RuleSet(me)
+	property name : "Selected Tasks"
+	property target : Rules's UserSpecifiedTasks's construct()
 
-	set aRuleSet to TidyRuleSet's constructRuleSet()
-	tell aRuleSet to processAll()
+	evaluate by cfr's OmniFocusTransportTextParsingRule
+	evaluate by StripSourceTokens
+	evaluate by cfr's TidyConsiderationsRule
+	evaluate by cfr's AddDailyRepeatRule
+	evaluate by cfr's ExpiredMeetingPreparationRule
+	evaluate by cfr's ExpiredCheckMeetingParticipationRule	
+end script		
 
-	log "Tidy completed."
+on main()	
+	tell suite to exec()	
 end main
 
 main()

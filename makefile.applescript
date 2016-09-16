@@ -33,7 +33,8 @@ script BuildScriptLibrary
 	property destinationDir : "build/Script Libraries"
 
 	makeScriptBundle from joinPath(sourceDir, "OmniFocus Rules Engine.applescript") at destinationDir with overwriting
-	makeScriptBundle from joinPath(sourceDir, "Creating Flow with OmniFocus Rules.applescript") at destinationDir with overwriting
+	makeScriptBundle from joinPath(sourceDir, "Default OmniFocus Rules Library.applescript") at destinationDir with overwriting
+--	makeScriptBundle from joinPath(sourceDir, "omnirulefile.applescript") at destinationDir with overwriting
 end script
 
 script BuildOFApplicationScripts
@@ -116,7 +117,7 @@ script dist
 		(run script POSIX file (joinPath(workingDirectory(), "src/OmniFocus Rules Engine.applescript")))
 	set dir to n & "-" & v
 	makePath(dir)
-	copyItems at {"build/OmniFocus Rules Engine.scptd", "build/Creating Flow with OmniFocus Rules.scptd", "build/OmniFocus Scripts/OmniFocusDomain.scptd", "build/OmniFocusTransportTextParsingService.scptd", "build/Process Inbox.scptd", "COPYING", "Documentation", ¬
+	copyItems at {"build/OmniFocus Rules Engine.scptd", "build/Default OmniFocus Rules Library.scptd", "build/OmniFocus Scripts/OmniFocusDomain.scptd", "build/OmniFocusTransportTextParsingService.scptd", "build/Process Inbox.scptd", "COPYING", "Documentation", ¬
 		"README.html"} into dir
 end script
 
@@ -140,15 +141,16 @@ script installHazelScript
 		set targetDir to joinPath(dir, targetDirName)
 		set targetPath to joinPath(targetDir, scriptname & ".scptd")
 
-		copyItems at sourceDir & scriptname & ".scptd" into targetDir with overwriting
+		copyItems at "build/Hazel Scripts/" & scriptname & ".scptd" into targetDir with overwriting
 		ohai(scriptname & " installed at" & space & targetPath)
 	end installWithOverwriteAlert
 
 	tell BuildHazelScripts to exec:{}
 	
-	copyItems at sourceDir into joinPath(dir, "com.kraigparkinson") with overwriting
+--	copyItems at sourceDir into joinPath(dir, "com.kraigparkinson") with overwriting
 --	copyItems at sourceDir & glob({"**/*.scptd"}) into joinPath(dir, "com.kraigparkinson") with overwriting
-	ohai("Hazel scripts installed at" & space & joinPath(dir, "com.kraigparkinson"))
+--	ohai("Hazel scripts installed at" & space & joinPath(dir, "com.kraigparkinson"))
+	installWithOverwriteAlert("OmniFocus Rule Processing Daemon", "com.kraigparkinson")	
 	
 end script
 
@@ -187,7 +189,24 @@ script installScriptLibraries
 
 	tell BuildScriptLibrary to exec:{}
 	installWithOverwriteAlert("OmniFocus Rules Engine", "com.kraigparkinson")	
-	installWithOverwriteAlert("Creating Flow with OmniFocus Rules", "com.kraigparkinson")	
+	installWithOverwriteAlert("Default OmniFocus Rules Library", "com.kraigparkinson")	
+end script
+
+script BuildRules
+	property parent : Task(me)
+	
+--	tell installScriptLibraries to exec:{}
+	
+	makeScriptBundle from "src/Rule Sets/omnirulefile.applescript" at "build/Rule Sets" with overwriting
+--	makeScriptBundle from "src/Rule Sets/missingsuite.applescript" at "build/Rule Sets" with overwriting
+end script
+
+script installRules
+	property parent : Task(me)
+	property targetDir : POSIX path of ((path to home folder from user domain) as text) & "OmniFocus Rules"
+
+	tell BuildRules to exec:{}
+	copyItem at "build/Rule Sets/" & "omnirulefile.scptd" into targetDir with overwriting
 end script
 
 script install
@@ -196,6 +215,7 @@ script install
 	tell installScriptLibraries to exec:{}
 	tell installHazelScript to exec:{}
 	tell InstallOFApplicationScripts to exec:{}
+	tell installRules to exec:{}
 	
 end script
 
@@ -206,9 +226,10 @@ script BuildTests
 	
 	owarn("Due to bugs in OS X Yosemite, building tests requires ASUnit to be installed.")
 	tell install to exec:{}
+	tell BuildRules to exec:{}
 	
 	makeScriptBundle from "test/Test OmniFocus Rules Engine.applescript" at "test" with overwriting
-	makeScriptBundle from "test/Test Creating Flow with OmniFocus Rules.applescript" at "test" with overwriting
+	makeScriptBundle from "test/Test Default OmniFocus Rules Library.applescript" at "test" with overwriting
 end script
 
 script RunTests
@@ -223,7 +244,7 @@ script RunTests
 	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test OmniFocus Rules Engine.scptd"))
 	run testSuite
 
-	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Creating Flow with OmniFocus Rules.scptd"))
+	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Default OmniFocus Rules Library.scptd"))
 	run testSuite
 
 end script
@@ -232,14 +253,21 @@ script uninstall
 	property parent : Task(me)
 	property dir : POSIX path of ¬
 		((path to library folder from user domain) as text) & "Script Libraries"
-	property description : "Remove OmniFocusTransportTextParsingService from" & space & dir
+	property description : "Remove OmniFocus Rule Engine related libraries from" & space & dir
 	
 	set targetPath to joinPath(dir, "com.kraigparkinson/OmniFocus Rules Engine.scptd")
 	if pathExists(targetPath) then
 		removeItem at targetPath
 	end if
 	ohai(targetPath & space & "deleted.")
-	
+
+	set targetPath to joinPath(dir, "com.kraigparkinson/Default OmniFocus Rules Library.scptd")
+	if pathExists(targetPath) then
+		removeItem at targetPath
+	end if
+	ohai(targetPath & space & "deleted.")
+
+		
 end script
 
 script VersionTask
