@@ -24,6 +24,36 @@ script api
 	shell for "env LANG=en_US.UTF-8 gatherheaderdoc" given options:dir
 end script
 
+script BuildRulesEngine
+	property parent : Task(me)
+	property name : "build/rules-engine"
+	property description : "Build Rules Engine (alone)"
+
+	property sourceDir : "src/Script Libraries/"
+	property destinationDir : "build/Script Libraries"
+
+	makeScriptBundle from joinPath(sourceDir, "OmniFocus Rules Engine.applescript") at destinationDir with overwriting
+end script
+
+script installRulesEngine
+	property parent : Task(me)
+	property dir : POSIX path of ¬
+		((path to library folder from user domain) as text) & "Script Libraries"
+	property description : "Install OmniFocus Rules Engine in" & space & dir
+
+	on installWithOverwriteAlert(scriptname, targetDirName)
+		set targetDir to joinPath(dir, targetDirName)
+		set targetPath to joinPath(targetDir, scriptname & ".scptd")
+
+		copyItem at "build/Script Libraries/" & scriptname & ".scptd" into targetDir with overwriting
+		ohai(scriptname & " installed at" & space & targetPath)
+	end installWithOverwriteAlert
+
+	tell BuildRulesEngine to exec:{}
+	installWithOverwriteAlert("OmniFocus Rules Engine", "com.kraigparkinson")	
+
+end script 
+
 script BuildScriptLibrary
 	property parent : Task(me)
 	property name : "build/library"
@@ -32,7 +62,8 @@ script BuildScriptLibrary
 	property sourceDir : "src/Script Libraries/"
 	property destinationDir : "build/Script Libraries"
 
-	makeScriptBundle from joinPath(sourceDir, "OmniFocus Rules Engine.applescript") at destinationDir with overwriting
+	tell BuildRulesEngine to exec:{ }
+	tell installRulesEngine to exec:{ }
 	makeScriptBundle from joinPath(sourceDir, "Default OmniFocus Rules Library.applescript") at destinationDir with overwriting
 --	makeScriptBundle from joinPath(sourceDir, "omnirulefile.applescript") at destinationDir with overwriting
 end script
@@ -61,6 +92,14 @@ script BuildHazelScripts
 end script
 
 script build
+	property parent : Task(me)
+	property description : "Build all source AppleScript scripts"
+
+	tell BuildScriptLibrary to exec:{}
+	osacompile(glob({}), "scpt", {"-x"})
+end script
+
+script buildAll
 	property parent : Task(me)
 	property description : "Build all source AppleScript scripts"
 	
@@ -173,6 +212,7 @@ script InstallOFApplicationScripts
 	installWithOverwriteAlert("Tidy", "")	
 end script
 
+
 script installScriptLibraries
 	property parent : Task(me)
 	property dir : POSIX path of ¬
@@ -188,7 +228,6 @@ script installScriptLibraries
 	end installWithOverwriteAlert
 
 	tell BuildScriptLibrary to exec:{}
-	installWithOverwriteAlert("OmniFocus Rules Engine", "com.kraigparkinson")	
 	installWithOverwriteAlert("Default OmniFocus Rules Library", "com.kraigparkinson")	
 end script
 
