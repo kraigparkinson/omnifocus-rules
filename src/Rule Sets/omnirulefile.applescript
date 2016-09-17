@@ -107,7 +107,7 @@ end script
 script MeetingsToPlanScript
 	property parent : RuleSet(me)
 	property name : "Meetings to Plan"
-	property target : target()'s project("Meetings to Plan")
+	property target : target()'s project("Meetings to plan")
 	
 	evaluate by cf's ExpiredMeetingPreparationRule		
 --	evaluate by cf's ExpiredCheckMeetingParticipationRule	
