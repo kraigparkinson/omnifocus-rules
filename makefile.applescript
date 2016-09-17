@@ -63,7 +63,7 @@ script BuildScriptLibrary
 	property destinationDir : "build/Script Libraries"
 
 	tell BuildRulesEngine to exec:{ }
-	tell installRulesEngine to exec:{ }
+
 	makeScriptBundle from joinPath(sourceDir, "Default OmniFocus Rules Library.applescript") at destinationDir with overwriting
 --	makeScriptBundle from joinPath(sourceDir, "omnirulefile.applescript") at destinationDir with overwriting
 end script
@@ -234,8 +234,6 @@ end script
 script BuildRules
 	property parent : Task(me)
 	
---	tell installScriptLibraries to exec:{}
-	
 	makeScriptBundle from "src/Rule Sets/omnirulefile.applescript" at "build/Rule Sets" with overwriting
 --	makeScriptBundle from "src/Rule Sets/missingsuite.applescript" at "build/Rule Sets" with overwriting
 end script
@@ -270,7 +268,6 @@ script BuildTests
 	property description : "Build tests, but do not run them"
 	
 	owarn("Due to bugs in OS X Yosemite, building tests requires ASUnit to be installed.")
-	tell install to exec:{}
 --	tell BuildRules to exec:{}
 	
 	makeScriptBundle from "test/Test OmniFocus Rules Engine.applescript" at "test" with overwriting
