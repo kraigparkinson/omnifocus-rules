@@ -1377,3 +1377,19 @@ script AbstractOmniFocusRuleSet
 		end repeat
 	end processAll	
 end script 
+
+on processInbox()
+	log "Process Inbox called."
+		
+	set pathToRules to POSIX path of ((path to home folder from user domain) as text)
+	set pathToRules to pathToRules & "OmniFocus Rules/"
+	set pathToRules to pathToRules & "omnirulefile.scptd"
+
+	--set ruleRepository to createFileRuleRepository(pathToRules)
+	--set suite to ruleRepository's loadAll()
+	--set suite to ruleRepository's loadInboxRules()
+	set suite to makeRuleLoader()'s loadRulesFromFile(pathToRules)
+	tell suite to exec()
+	
+	log "Process Inbox completed."	
+end processInbox
