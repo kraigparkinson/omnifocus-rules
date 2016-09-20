@@ -35,25 +35,6 @@ script BuildRulesEngine
 	makeScriptBundle from joinPath(sourceDir, "OmniFocus Rules Engine.applescript") at destinationDir with overwriting
 end script
 
-script installRulesEngine
-	property parent : Task(me)
-	property dir : POSIX path of ¬
-		((path to library folder from user domain) as text) & "Script Libraries"
-	property description : "Install OmniFocus Rules Engine in" & space & dir
-
-	on installWithOverwriteAlert(scriptname, targetDirName)
-		set targetDir to joinPath(dir, targetDirName)
-		set targetPath to joinPath(targetDir, scriptname & ".scptd")
-
-		copyItem at "build/Script Libraries/" & scriptname & ".scptd" into targetDir with overwriting
-		ohai(scriptname & " installed at" & space & targetPath)
-	end installWithOverwriteAlert
-
-	tell BuildRulesEngine to exec:{}
-	installWithOverwriteAlert("OmniFocus Rules Engine", "com.kraigparkinson")	
-
-end script 
-
 script BuildScriptLibrary
 	property parent : Task(me)
 	property name : "build/library"
@@ -91,6 +72,13 @@ script BuildHazelScripts
 	makeScriptBundle from joinPath(sourceDir, "OmniFocus Rule Processing Daemon.applescript") at destinationDir with overwriting
 end script
 
+script BuildRules
+	property parent : Task(me)
+	
+	makeScriptBundle from "src/Rule Sets/omnirulefile.applescript" at "build/Rule Sets" with overwriting
+--	makeScriptBundle from "src/Rule Sets/missingsuite.applescript" at "build/Rule Sets" with overwriting
+end script
+
 script build
 	property parent : Task(me)
 	property description : "Build all source AppleScript scripts"
@@ -103,6 +91,7 @@ script buildAll
 	property parent : Task(me)
 	property description : "Build all source AppleScript scripts"
 	
+	tell BuildRulesEngine to exec:{}
 	tell BuildScriptLibrary to exec:{}
 	tell BuildOFApplicationScripts to exec:{}
 	tell BuildHazelScripts to exec:{}
@@ -168,6 +157,42 @@ script gzip
 	do shell script "tar czf " & quoted form of (dist's dir & ".tar.gz") & space & quoted form of dist's dir & "/*"
 end script
 
+script installRulesEngine
+	property parent : Task(me)
+	property dir : POSIX path of ¬
+		((path to library folder from user domain) as text) & "Script Libraries"
+	property description : "Install OmniFocus Rules Engine in" & space & dir
+
+	on installWithOverwriteAlert(scriptname, targetDirName)
+		set targetDir to joinPath(dir, targetDirName)
+		set targetPath to joinPath(targetDir, scriptname & ".scptd")
+
+		copyItem at "build/Script Libraries/" & scriptname & ".scptd" into targetDir with overwriting
+		ohai(scriptname & " installed at" & space & targetPath)
+	end installWithOverwriteAlert
+
+	tell BuildRulesEngine to exec:{}
+	installWithOverwriteAlert("OmniFocus Rules Engine", "com.kraigparkinson")	
+end script 
+
+script installScriptLibraries
+	property parent : Task(me)
+	property dir : POSIX path of ¬
+		((path to library folder from user domain) as text) & "Script Libraries"
+	property description : "Install OmniFocus Rules Engine in" & space & dir
+	
+	on installWithOverwriteAlert(scriptname, targetDirName)
+		set targetDir to joinPath(dir, targetDirName)
+		set targetPath to joinPath(targetDir, scriptname & ".scptd")
+
+		copyItem at "build/Script Libraries/" & scriptname & ".scptd" into targetDir with overwriting
+		ohai(scriptname & " installed at" & space & targetPath)
+	end installWithOverwriteAlert
+
+	tell BuildScriptLibrary to exec:{}
+	installWithOverwriteAlert("Default OmniFocus Rules Library", "com.kraigparkinson")	
+end script
+
 script installHazelScript
 	property parent : Task(me)
 	property dir : POSIX path of ¬
@@ -212,32 +237,6 @@ script InstallOFApplicationScripts
 	installWithOverwriteAlert("Tidy", "")	
 end script
 
-
-script installScriptLibraries
-	property parent : Task(me)
-	property dir : POSIX path of ¬
-		((path to library folder from user domain) as text) & "Script Libraries"
-	property description : "Install OmniFocus Rules Engine in" & space & dir
-	
-	on installWithOverwriteAlert(scriptname, targetDirName)
-		set targetDir to joinPath(dir, targetDirName)
-		set targetPath to joinPath(targetDir, scriptname & ".scptd")
-
-		copyItem at "build/Script Libraries/" & scriptname & ".scptd" into targetDir with overwriting
-		ohai(scriptname & " installed at" & space & targetPath)
-	end installWithOverwriteAlert
-
-	tell BuildScriptLibrary to exec:{}
-	installWithOverwriteAlert("Default OmniFocus Rules Library", "com.kraigparkinson")	
-end script
-
-script BuildRules
-	property parent : Task(me)
-	
-	makeScriptBundle from "src/Rule Sets/omnirulefile.applescript" at "build/Rule Sets" with overwriting
---	makeScriptBundle from "src/Rule Sets/missingsuite.applescript" at "build/Rule Sets" with overwriting
-end script
-
 script installRules
 	property parent : Task(me)
 	property targetDir : POSIX path of ((path to home folder from user domain) as text) & "OmniFocus Rules"
@@ -246,20 +245,36 @@ script installRules
 	copyItem at "build/Rule Sets/" & "omnirulefile.scptd" into targetDir with overwriting
 end script
 
+script installServer
+	property parent : Task(me)
+	property name : "install/server"
+	property description : "Install everything you need to create a server instance."
+
+	tell installRulesEngine to exec:{}
+	tell installScriptLibraries to exec:{}
+	tell installRules to exec:{}	
+	tell installHazelScript to exec:{}
+end script
+
+script installClient
+	property parent : Task(me)
+	property name : "install/client"
+	property description : "Install everything you need to create a working client instance."
+
+	tell installRulesEngine to exec:{}
+	tell installScriptLibraries to exec:{}
+	tell installRules to exec:{}	
+	tell InstallOFApplicationScripts to exec:{}
+end script
+
 script install
 	property parent : Task(me)
 
-	tell installScriptLibraries to exec:{ }
-end script
-
-script installAll
-	property parent : Task(me)
-	
+	tell installRulesEngine to exec:{}
 	tell installScriptLibraries to exec:{}
 	tell installHazelScript to exec:{}
 	tell InstallOFApplicationScripts to exec:{}
-	tell installRules to exec:{}
-	
+	tell installRules to exec:{}	
 end script
 
 script BuildTests
@@ -291,8 +306,9 @@ script RunTests
 
 end script
 
-script uninstall
+script uninstallRulesEngine
 	property parent : Task(me)
+	property name : "uninstall/engine"
 	property dir : POSIX path of ¬
 		((path to library folder from user domain) as text) & "Script Libraries"
 	property description : "Remove OmniFocus Rule Engine related libraries from" & space & dir
@@ -307,10 +323,67 @@ script uninstall
 	if pathExists(targetPath) then
 		removeItem at targetPath
 	end if
+	ohai(targetPath & space & "deleted.")		
+end script
+
+script uninstallRuleSets
+	property parent : Task(me)
+	property name : "uninstall/rules"
+	property dir : POSIX path of ((path to home folder from user domain) as text) & "OmniFocus Rules"
+	property description : "Remove installed rules from current user directory, " & space & dir
+	
+	set targetPath to joinPath(dir, "omnirulefile.scptd")
+	if pathExists(targetPath) then
+		removeItem at targetPath
+	end if
+	ohai(targetPath & space & "deleted.")
+end script
+
+script uninstallOFApplicationScripts
+	property parent : Task(me)
+	property name : "uninstall/app-scripts"
+	property dir : POSIX path of ¬
+		((path to library folder from user domain) as text) & "Application Scripts/com.omnigroup.OmniFocus2"
+	property description : "Remove OmniFocus Rule Engine related application scripts from" & space & dir
+	
+	set targetPath to joinPath(dir, "Process Inbox.scptd")
+	if pathExists(targetPath) then
+		removeItem at targetPath
+	end if
 	ohai(targetPath & space & "deleted.")
 
-		
+	set targetPath to joinPath(dir, "Tidy.scptd")
+	if pathExists(targetPath) then
+		removeItem at targetPath
+	end if
+	ohai(targetPath & space & "deleted.")		
 end script
+
+script uninstallHazelScripts
+	property parent : Task(me)
+	property name : "uninstall/hazel"
+	property dir : POSIX path of ¬
+		((path to library folder from user domain) as text) & "Scripts/Hazel"
+	property description : "Remove OmniFocus Rule Engine related application scripts from" & space & dir
+	
+	set targetPath to joinPath(dir, "OmniFocus Rule Processing Daemon.scptd")
+	if pathExists(targetPath) then
+		removeItem at targetPath
+	end if
+	ohai(targetPath & space & "deleted.")
+end script
+
+script uninstall
+	property parent : Task(me)
+	property name : "uninstall"
+	property description : "Uninstall all artifacts related to the OmniFocus Rules Engine"
+	property printSuccess : false
+
+	tell uninstallRulesEngine to exec:{}
+	tell uninstallRuleSets to exec:{}
+	tell uninstallOFApplicationScripts to exec:{}
+	tell uninstallHazelScripts to exec:{}
+end script 
 
 script VersionTask
 	property parent : Task(me)
