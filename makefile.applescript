@@ -44,7 +44,6 @@ script BuildScriptLibrary
 	property destinationDir : "build/Script Libraries/com.kraigparkinson"
 
 	tell BuildRulesEngine to exec:{ }
-
 	makeScriptBundle from joinPath(sourceDir, "Default OmniFocus Rules Library.applescript") at destinationDir with overwriting
 end script
 
@@ -56,6 +55,8 @@ script BuildOFApplicationScripts
 	property sourceDir : "src/OmniFocus Scripts/"
 	property destinationDir : "build/OmniFocus Scripts"
 
+	tell BuildRulesEngine to exec:{}
+	tell BuildScriptLibrary to exec:{}
 	makeScriptBundle from joinPath(sourceDir, "Process Inbox.applescript") at destinationDir with overwriting
 	makeScriptBundle from joinPath(sourceDir, "Tidy.applescript") at destinationDir with overwriting
 end script
@@ -68,6 +69,8 @@ script BuildHazelScripts
 	property sourceDir : "src/Hazel Scripts/"
 	property destinationDir : "build/Hazel Scripts"
 	
+	tell BuildRulesEngine to exec:{}
+	tell BuildScriptLibrary to exec:{}	
 	makeScriptBundle from joinPath(sourceDir, "OmniFocus Rule Processing Daemon.applescript") at destinationDir with overwriting
 end script
 
