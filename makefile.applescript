@@ -77,6 +77,8 @@ end script
 script BuildRules
 	property parent : Task(me)
 	
+	tell BuildRulesEngine to exec:{}
+	tell BuildScriptLibrary to exec:{}
 	makeScriptBundle from "src/Rule Sets/omnirulefile.applescript" at "build/Rule Sets" with overwriting
 --	makeScriptBundle from "src/Rule Sets/missingsuite.applescript" at "build/Rule Sets" with overwriting
 end script
