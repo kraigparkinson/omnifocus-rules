@@ -224,7 +224,7 @@ script InstallOFApplicationScripts
 	property parent : Task(me)
 	property dir : POSIX path of ¬
 		((path to library folder from user domain) as text) & "Application Scripts/com.omnigroup.OmniFocus2"
-	property description : "Install Process Inbox in" & space & dir
+	property description : "Install Application Scripts in" & space & dir
 	
 	on installWithOverwriteAlert(scriptname, targetDirName)
 		set targetDir to joinPath(dir, targetDirName)
