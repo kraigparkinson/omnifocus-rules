@@ -1,3 +1,13 @@
+(*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's name. *)
+property name : "OmniFocus Rule Processing Daemon"
+(*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's version. *)
+property version : "1.0.0"
+(*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's id. *)
+property id : "OmniFocus Rule Processing Daemon"
+
+--use AppleScript version "2.4"
+--use scripting additions
+
 property Rules : script "com.kraigparkinson/OmniFocus Rules Engine"
 
 (*)
@@ -7,12 +17,7 @@ property inputAttributes : missing value
 hazelProcessFile(theFile, inputAttributes)
 *)
 on hazelProcessFile(theFile, inputAttributes)
-	set pathToRules to POSIX path of ((path to home folder from user domain) as text)
-	set pathToRules to pathToRules & "OmniFocus Rules/"
-	set pathToRules to pathToRules & "omnirulefile.scptd"
-
-	set aFile to pathToRules
+	tell Rules to processAllRules()
 	
-	set suite to rules's makeRuleLoader()'s loadRulesFromFile(pathToRules)
-	tell suite to exec()
+	return {hazelStop:false, hazelSwitchFile:missing value, hazelOutputAttributes:{ }}
 end hazelProcessFile

@@ -1,3 +1,6 @@
+use AppleScript version "2.4"
+use scripting additions
+
 (*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's name. *)
 property name : "OmniFocus Rules Engine"
 (*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's version. *)
@@ -5,7 +8,6 @@ property version : "1.0.0"
 (*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's id. *)
 property id : "com.kraigparkinson.OmniFocus Rules Engine"
 
---use scripting additions
 --use OmniFocus : application "OmniFocus"
 --use domain : script "com.kraigparkinson/OmniFocusDomain"
 
@@ -13,6 +15,8 @@ property textutil : script "com.kraigparkinson/ASText"
 property dateutil : script "com.kraigparkinson/ASDate"
 property ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
 property domain : script "com.kraigparkinson/OmniFocusDomain"
+
+property _ruleRepository : missing value
 
 script TaskProxy
 	property originalTask : missing value
@@ -47,23 +51,33 @@ end script
 
 on makeRuleLoader()
 	script RuleLoader
+	
+		on isSatisfiedBy(aScript)
+			return (aScript's suite is not my RuleSentinel)
+		end isSatisfiedBy
+	
+		(*! @abstract Raises a missing suite error. *)
+		on MissingSuiteError(sourceName)
+			error sourceName & " does not have a suite property"
+		end MissingSuiteError
+	
+		on loadRulesFromScript(aScript)
+			set aSuite to aScript's suite
+			if not isSatisfiedBy(aScript) then MissingSuiteError(aScript's name)
+			return aSuite
+		end loadRulesFromScript
+		
 		on loadRulesFromFile(aFile)
-			set ruleScript to load script aFile --file (aFile as text)
-			
-			try
-				set aSuite to ruleScript's suite
-				if ruleScript's suite is my RuleSentinel then MissingSuiteError(aFile)
-				return aSuite
-			on error number 10
-				MissingSuiteError(aFile)
-			end try			
+			set aScript to load script aFile --file (aFile as text)
+			return loadRulesFromScript(aScript)
 		end loadRulesFromFile
 		
-		(*! @abstract Raises a missing suite error. *)
-		on MissingSuiteError(aFile)
-			set f to aFile as text
-			error f & " does not have a suite property"
-		end MissingSuiteError
+		on validateScript(aScript)
+			set aSuite to aScript's suite
+			if aScript's suite is my RuleSentinel then MissingSuiteError(aScript's name)
+			return aSuite
+		end validateScript
+		
 		
 	end script
 	
@@ -1378,18 +1392,55 @@ script AbstractOmniFocusRuleSet
 	end processAll	
 end script 
 
-on processInbox()
-	log "Process Inbox called."
-		
+on initializeRuleRepository()
+	log "Initializing rule repository."
+
+	--Set up container	
 	set pathToRules to POSIX path of ((path to home folder from user domain) as text)
 	set pathToRules to pathToRules & "OmniFocus Rules/"
 	set pathToRules to pathToRules & "omnirulefile.scptd"
 
-	--set ruleRepository to createFileRuleRepository(pathToRules)
-	--set suite to ruleRepository's loadAll()
-	--set suite to ruleRepository's loadInboxRules()
-	set suite to makeRuleLoader()'s loadRulesFromFile(pathToRules)
+	script FileLoadingRuleRepository
+		property name : "FileLoadingRuleRepository"
+		on getAll()
+			set suite to makeRuleLoader()'s loadRulesFromFile(pathToRules)
+			return suite
+		end getAll
+	end script
+	
+	registerRuleRepository(FileLoadingRuleRepository)
+end initializeRuleRepository
+
+on registerRuleRepository(repo)
+	log "Registering rule repository, " & repo's name
+	set _ruleRepository to repo
+end registerRuleRepository
+
+on locateRuleRepository()
+	if _ruleRepository is missing value
+		log "Rule repository has not yet been registered."
+		initializeRuleRepository()
+	end if
+	
+	log "Located rule repository, " & _ruleRepository's name
+	return _ruleRepository
+end locateRuleRepository
+
+on processInbox()
+	log "Process Inbox called."
+
+	set ruleRepository to locateRuleRepository()
+	set suite to ruleRepository's getAll()
 	tell suite to exec()
 	
 	log "Process Inbox completed."	
 end processInbox
+
+on processAllRules()
+	set repo to locateRuleRepository()
+
+	--Do stuff	
+	set suite to repo's getAll()
+	tell suite to exec()
+end processAllRules
+

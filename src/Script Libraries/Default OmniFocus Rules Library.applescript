@@ -1,9 +1,13 @@
+use AppleScript version "2.4"
+use scripting additions
+
 (*! @abstract <em>[text]</em> Creating Flow with OmniFocus's name. *)
 property name : "Default OmniFocus Rules Library"
 (*! @abstract <em>[text]</em> Creating Flow with OmniFocus's version. *)
 property version : "1.0.0"
 (*! @abstract <em>[text]</em> Creating Flow with OmniFocus's id. *)
 property id : "com.kraigparkinson.Default OmniFocus Rules Library"
+
 
 property textutil : script "com.kraigparkinson/ASText"
 property ddd : script "com.kraigparkinson/ASDomainDrivenDesign"

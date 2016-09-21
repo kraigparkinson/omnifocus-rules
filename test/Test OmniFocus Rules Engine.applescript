@@ -15,6 +15,66 @@ property suite : makeTestSuite("OmniFocus Rules Engine")
 
 my autorun(suite)
 
+(*
+script |RuleRepository|
+	property parent : TestSet(me)
+
+	on setUp()
+	end setUp
+
+	on tearDown()
+	end tearDown
+	
+	script MockRuleService
+		property parent : RuleService
+		
+	end script
+	
+	script RuleRepository
+		on findAll()
+		end findAll				
+	end script
+	
+	script FileBasedRuleRepository
+		property parent : RuleRepository
+
+		on findAll()
+		end findAll			
+	end script
+	
+	script MockRuleRepository
+		property parent : RuleRepository
+
+		on findAll()
+			return { }
+		end findAll			
+	end script
+
+	script |Repository returns list of rules|
+		property parent : UnitTest(me)
+
+		set ruleRepo to container's resolve("Rule")
+		
+		RuleRepository's ruleService to MockRuleService
+		
+	end script
+	
+	
+end script
+*)
+
+script MockTarget
+	property parent : rules's OmniFocusRuleTarget
+
+	on defineName()
+		return "Mock Target"
+	end defineName
+	
+	on getTasks()
+		return my tasks
+	end getTasks
+end script
+
 script |FileRuleLoader|
 	property parent : TestSet(me)
 
@@ -23,7 +83,69 @@ script |FileRuleLoader|
 
 	on tearDown()
 	end tearDown
+	
+	on createRuleScriptFixture()
+		--Set up the test rule
+		script TestRule
+			property parent : rules's OmniFocusTaskProcessingRule
+			
+			on prettyName()
+				return "TestRule"
+			end prettyName
+			
+			on matchTask(aTask, inputAttributes)
+				aTest's refuteMissing(aTask) 
+				return true
+			end matchTask
+	
+			on processTask(aTask, inputAttributes)
+				aTest's refuteMissing(aTask) 
+				return missing value
+			end processTask		
+			
+			on run()
+			end run	
+		end script
+		
+		--Set up the top-level script object 
+		 
+		script TestRuleScript
+			property parent : Rules
+			property suite : Rules's makeRuleSuite("Test Rule Suite")					
+		end script		
+		
+		script TestRuleSet
+			property parent : rules's makeRuleSet()
+			property name : "Test Rule Set"
+			property target : MockTarget's construct()
+	
+			evaluate by TestRule
+		end script
+		
+		tell TestRuleScript's suite to addRuleSet(TestRuleSet)
+		
+		return TestRuleScript
+	end createRuleScriptFixture
 
+	script |validates a legit script|
+		property parent : UnitTest(me)
+		
+		set aScript to createRuleScriptFixture()
+			
+		assert(rules's makeRuleLoader()'s isSatisfiedBy(aScript), "Should be considered valid.")		
+	end script
+	
+	script |loads rules from valid script|
+		property parent : UnitTest(me)
+		
+		set aScript to createRuleScriptFixture()
+		set aSuite to rules's makeRuleLoader()'s loadRulesFromScript(aScript)
+		
+		refuteMissing(aSuite, "Should have loaded the suite.")
+		assertEqual("Test Rule Suite", aSuite's name)
+		assertEqual(1, count of aSuite's ruleSets)
+	end script
+(*	
 	script |loads rules from existing file|
 		property parent : UnitTest(me)
 		
@@ -39,13 +161,12 @@ script |FileRuleLoader|
 		
 		assertEqual(2, count of aSuite's ruleSets)		
 	end script
-
+*)
 	script |throws file missing error from non-existing file|
 		property parent : UnitTest(me)
 		
 		set rulesPath to POSIX path of ((path to home folder from user domain) as text)
 		set rulesPath to rulesPath & "Repositories/omnifocus-rules/build/Rule Sets/"
-		
 		set rulesPath to rulesPath & "missingsuite.scptd"
 		
 		try
@@ -56,19 +177,6 @@ script |FileRuleLoader|
 		end try
 	end script
 
-end script
-
-script MockTarget
-	property parent : rules's OmniFocusRuleTarget
-
-	on defineName()
-		return "Mock Target"
-	end defineName
-	
-	on getTasks()
-		return my tasks
-	end getTasks
-	
 end script
 
 script |TextSpecification|

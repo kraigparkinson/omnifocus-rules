@@ -30,7 +30,7 @@ script BuildRulesEngine
 	property description : "Build Rules Engine (alone)"
 
 	property sourceDir : "src/Script Libraries/"
-	property destinationDir : "build/Script Libraries"
+	property destinationDir : "build/Script Libraries/com.kraigparkinson"
 
 	makeScriptBundle from joinPath(sourceDir, "OmniFocus Rules Engine.applescript") at destinationDir with overwriting
 end script
@@ -41,12 +41,11 @@ script BuildScriptLibrary
 	property description : "Build Script Libraries"
 	
 	property sourceDir : "src/Script Libraries/"
-	property destinationDir : "build/Script Libraries"
+	property destinationDir : "build/Script Libraries/com.kraigparkinson"
 
 	tell BuildRulesEngine to exec:{ }
 
 	makeScriptBundle from joinPath(sourceDir, "Default OmniFocus Rules Library.applescript") at destinationDir with overwriting
---	makeScriptBundle from joinPath(sourceDir, "omnirulefile.applescript") at destinationDir with overwriting
 end script
 
 script BuildOFApplicationScripts
@@ -283,10 +282,13 @@ script BuildTests
 	property description : "Build tests, but do not run them"
 	
 	owarn("Due to bugs in OS X Yosemite, building tests requires ASUnit to be installed.")
---	tell BuildRules to exec:{}
+	tell BuildAll to exec:{}
 	
 	makeScriptBundle from "test/Test OmniFocus Rules Engine.applescript" at "test" with overwriting
 	makeScriptBundle from "test/Test Default OmniFocus Rules Library.applescript" at "test" with overwriting
+	makeScriptBundle from "test/Test OmniFocus Rule Processing Daemon.applescript" at "test" with overwriting
+	makeScriptBundle from "test/Test Process Inbox.applescript" at "test" with overwriting
+	makeScriptBundle from "test/Test Tidy.applescript" at "test" with overwriting
 end script
 
 script RunTests
@@ -302,6 +304,15 @@ script RunTests
 	run testSuite
 
 	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Default OmniFocus Rules Library.scptd"))
+	run testSuite
+
+	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test OmniFocus Rule Processing Daemon.scptd"))
+	run testSuite
+
+	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Process Inbox.scptd"))
+	run testSuite
+
+	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Tidy.scptd"))
 	run testSuite
 
 end script
