@@ -5,7 +5,7 @@
 	@copyright 2015 kraigparkinson
 *)
 property daemon : script "OmniFocus Rule Processing Daemon"
-property rules : script "com.kraigparkinson/OmniFocus Rules Engine"
+property rules : script "com.kraigparkinson/Hobson"
 property parent : script "com.lifepillar/ASUnit"
 
 property suite : makeTestSuite("OmniFocus Rule Processing Daemon")

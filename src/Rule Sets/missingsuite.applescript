@@ -1,4 +1,4 @@
-use Rules : script "com.kraigparkinson/OmniFocus Rules Engine"
+use Rules : script "com.kraigparkinson/Hobson"
 
 property parent : Rules
 

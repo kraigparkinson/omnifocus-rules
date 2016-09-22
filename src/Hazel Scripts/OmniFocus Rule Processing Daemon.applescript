@@ -8,7 +8,7 @@ property id : "OmniFocus Rule Processing Daemon"
 --use AppleScript version "2.4"
 --use scripting additions
 
-property Rules : script "com.kraigparkinson/OmniFocus Rules Engine"
+property Rules : script "com.kraigparkinson/Hobson"
 
 (*)
 property theFile : missing value

@@ -12,7 +12,7 @@ property id : "com.kraigparkinson.Default OmniFocus Rules Library"
 property textutil : script "com.kraigparkinson/ASText"
 property ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
 property domain : script "com.kraigparkinson/OmniFocusDomain"
-property rules : script "com.kraigparkinson/OmniFocus Rules Engine"
+property rules : script "com.kraigparkinson/Hobson"
 
 
 script TidyConsiderationsRule
@@ -27,7 +27,7 @@ script TidyConsiderationsRule
 	match by (context()'s missing()'s getContents())
 	
 	command thru (setContext("Considerations"))
-	command thru (do()'s repetition()'s deferAnother("daily")'s getContents())
+	command thru (do()'s repetition()'s deferAnother("DAILY")'s getContents())
 end script
 
 script AddDailyRepeatRule
@@ -41,7 +41,7 @@ script AddDailyRepeatRule
 	set aToken to " (Add daily repeat)"
 	match by (taskName()'s endsWith(aToken)'s getContents())
 	
-	command thru (do()'s repetition()'s deferAnother("daily")'s getContents())
+	command thru (do()'s repetition()'s deferAnother("DAILY")'s getContents())
 	command thru (do()'s taskName()'s replace(aToken, "")'s getContents())
 	
 end script

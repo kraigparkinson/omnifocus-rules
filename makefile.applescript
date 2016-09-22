@@ -20,7 +20,7 @@ script api
 	
 	ohai("Running HeaderDoc, please wait...")
 	--Set LANG to get rid of warnings about missing default encoding
-	shell for "env LANG=en_US.UTF-8 headerdoc2html" given options:{"-q", "-o", dir, "OmniFocus Rules Engine.applescript"}
+	shell for "env LANG=en_US.UTF-8 headerdoc2html" given options:{"-q", "-o", dir, "Hobson.applescript"}
 	shell for "env LANG=en_US.UTF-8 gatherheaderdoc" given options:dir
 end script
 
@@ -32,7 +32,7 @@ script BuildRulesEngine
 	property sourceDir : "src/Script Libraries/"
 	property destinationDir : "build/Script Libraries/com.kraigparkinson"
 
-	makeScriptBundle from joinPath(sourceDir, "OmniFocus Rules Engine.applescript") at destinationDir with overwriting
+	makeScriptBundle from joinPath(sourceDir, "Hobson.applescript") at destinationDir with overwriting
 end script
 
 script BuildScriptLibrary
@@ -115,7 +115,7 @@ script clobber
 	property description : "Remove any generated file"
 	
 	tell clean to exec:{}
-	removeItems at glob({"OmniFocus Rules Engine-*", "*.tar.gz", "*.html"}) with forcing
+	removeItems at glob({"Hobson-*", "*.tar.gz", "*.html"}) with forcing
 end script
 
 script doc
@@ -146,10 +146,10 @@ script dist
 	tell doc to exec:{}
 	
 	set {n, v} to {name, version} of ¬
-		(run script POSIX file (joinPath(workingDirectory(), "src/OmniFocus Rules Engine.applescript")))
+		(run script POSIX file (joinPath(workingDirectory(), "src/Hobson.applescript")))
 	set dir to n & "-" & v
 	makePath(dir)
-	copyItems at {"build/OmniFocus Rules Engine.scptd", "build/Default OmniFocus Rules Library.scptd", "build/OmniFocus Scripts/OmniFocusDomain.scptd", "build/OmniFocusTransportTextParsingService.scptd", "build/Process Inbox.scptd", "COPYING", "Documentation", ¬
+	copyItems at {"build/Hobson.scptd", "build/Default OmniFocus Rules Library.scptd", "build/OmniFocus Scripts/OmniFocusDomain.scptd", "build/OmniFocusTransportTextParsingService.scptd", "build/Process Inbox.scptd", "COPYING", "Documentation", ¬
 		"README.html"} into dir
 end script
 
@@ -165,7 +165,7 @@ script installRulesEngine
 	property parent : Task(me)
 	property dir : POSIX path of ¬
 		((path to library folder from user domain) as text) & "Script Libraries"
-	property description : "Install OmniFocus Rules Engine in" & space & dir
+	property description : "Install Hobson in" & space & dir
 
 	on installWithOverwriteAlert(scriptname, targetDirName)
 		set targetDir to joinPath(dir, targetDirName)
@@ -176,14 +176,14 @@ script installRulesEngine
 	end installWithOverwriteAlert
 
 	tell BuildRulesEngine to exec:{}
-	installWithOverwriteAlert("com.kraigparkinson/OmniFocus Rules Engine", "com.kraigparkinson")	
+	installWithOverwriteAlert("com.kraigparkinson/Hobson", "com.kraigparkinson")	
 end script 
 
 script installScriptLibraries
 	property parent : Task(me)
 	property dir : POSIX path of ¬
 		((path to library folder from user domain) as text) & "Script Libraries"
-	property description : "Install OmniFocus Rules Engine in" & space & dir
+	property description : "Install Hobson in" & space & dir
 	
 	on installWithOverwriteAlert(scriptname, targetDirName)
 		set targetDir to joinPath(dir, targetDirName)
@@ -289,7 +289,7 @@ script BuildTests
 	owarn("Due to bugs in OS X Yosemite, building tests requires ASUnit to be installed.")
 	tell BuildAll to exec:{}
 	
-	makeScriptBundle from "test/Test OmniFocus Rules Engine.applescript" at "test" with overwriting
+	makeScriptBundle from "test/Test Hobson.applescript" at "test" with overwriting
 	makeScriptBundle from "test/Test Default OmniFocus Rules Library.applescript" at "test" with overwriting
 	makeScriptBundle from "test/Test OmniFocus Rule Processing Daemon.applescript" at "test" with overwriting
 	makeScriptBundle from "test/Test Process Inbox.applescript" at "test" with overwriting
@@ -305,7 +305,7 @@ script RunTests
 	tell BuildTests to exec:{}
 	-- The following causes a segmentation fault unless ASUnit in installed in a shared location
 	
-	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test OmniFocus Rules Engine.scptd"))
+	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Hobson.scptd"))
 	run testSuite
 
 	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Default OmniFocus Rules Library.scptd"))
@@ -329,7 +329,7 @@ script uninstallRulesEngine
 		((path to library folder from user domain) as text) & "Script Libraries"
 	property description : "Remove OmniFocus Rule Engine related libraries from" & space & dir
 	
-	set targetPath to joinPath(dir, "com.kraigparkinson/OmniFocus Rules Engine.scptd")
+	set targetPath to joinPath(dir, "com.kraigparkinson/Hobson.scptd")
 	if pathExists(targetPath) then
 		removeItem at targetPath
 	end if
@@ -392,7 +392,7 @@ end script
 script uninstall
 	property parent : Task(me)
 	property name : "uninstall"
-	property description : "Uninstall all artifacts related to the OmniFocus Rules Engine"
+	property description : "Uninstall all artifacts related to the Hobson"
 	property printSuccess : false
 
 	tell uninstallRulesEngine to exec:{}
@@ -408,6 +408,6 @@ script VersionTask
 	property printSuccess : false
 	
 	set {n, v} to {name, version} of ¬
-		(run script POSIX file (joinPath(workingDirectory(), "OmniFocus Rules Engine.applescript")))
+		(run script POSIX file (joinPath(workingDirectory(), "Hobson.applescript")))
 	ohai(n & space & "v" & v)
 end script

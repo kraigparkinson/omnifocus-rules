@@ -7,11 +7,11 @@
 property textutil : script "com.kraigparkinson/ASText"
 property dateutil : script "com.kraigparkinson/ASDate"
 property domain : script "com.kraigparkinson/OmniFocusDomain"
-property rules : script "com.kraigparkinson/OmniFocus Rules Engine"
+property rules : script "com.kraigparkinson/Hobson"
 
 property parent : script "com.lifepillar/ASUnit"
 
-property suite : makeTestSuite("OmniFocus Rules Engine")
+property suite : makeTestSuite("Hobson")
 
 my autorun(suite)
 

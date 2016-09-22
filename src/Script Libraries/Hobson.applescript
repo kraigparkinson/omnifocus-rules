@@ -2,11 +2,11 @@ use AppleScript version "2.4"
 use scripting additions
 
 (*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's name. *)
-property name : "OmniFocus Rules Engine"
+property name : "Hobson"
 (*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's version. *)
 property version : "1.0.0"
 (*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's id. *)
-property id : "com.kraigparkinson.OmniFocus Rules Engine"
+property id : "com.kraigparkinson.Hobson"
 
 --use OmniFocus : application "OmniFocus"
 --use domain : script "com.kraigparkinson/OmniFocusDomain"
