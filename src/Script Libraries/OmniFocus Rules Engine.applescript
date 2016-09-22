@@ -1063,12 +1063,13 @@ script RepetitionRuleCommandBuilder
 		
 		if (repetitionRule is "defer") then
 			set aCommand to domain's DeferAnotherPeriodCommand's constructCommand()
-			set aCommand's frequency to frequency
 		else if (repetitionRule is "due") then
-			set aCommand to domain's DueAgainDailyCommand's constructCommand()
+			set aCommand to domain's DueAgainCommand's constructCommand()
 		else if (repetitionRule is "fixed") then
-			set aCommand to domain's RepeatEveryDayCommand's constructCommand()
+			set aCommand to domain's RepeatEveryCommand's constructCommand()
 		end
+
+		set aCommand's frequency to frequency
 				
 		return aCommand
 	end getContents
