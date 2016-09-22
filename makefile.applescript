@@ -176,7 +176,7 @@ script installRulesEngine
 	end installWithOverwriteAlert
 
 	tell BuildRulesEngine to exec:{}
-	installWithOverwriteAlert("OmniFocus Rules Engine", "com.kraigparkinson")	
+	installWithOverwriteAlert("com.kraigparkinson/OmniFocus Rules Engine", "com.kraigparkinson")	
 end script 
 
 script installScriptLibraries
@@ -194,7 +194,7 @@ script installScriptLibraries
 	end installWithOverwriteAlert
 
 	tell BuildScriptLibrary to exec:{}
-	installWithOverwriteAlert("Default OmniFocus Rules Library", "com.kraigparkinson")	
+	installWithOverwriteAlert("com.kraigparkinson/Default OmniFocus Rules Library", "com.kraigparkinson")	
 end script
 
 script installHazelScript

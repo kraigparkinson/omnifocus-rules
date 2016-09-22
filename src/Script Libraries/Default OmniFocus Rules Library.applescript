@@ -27,7 +27,6 @@ script TidyConsiderationsRule
 	match by (context()'s missing()'s getContents())
 	
 	command thru (setContext("Considerations"))
---	command thru (domain's DeferAnotherPeriodCommand's constructCommand())
 	command thru (do()'s repetition()'s deferAnother("daily")'s getContents())
 end script
 
@@ -42,7 +41,6 @@ script AddDailyRepeatRule
 	set aToken to " (Add daily repeat)"
 	match by (taskName()'s endsWith(aToken)'s getContents())
 	
---	command thru (domain's DeferAnotherPeriodCommand's constructCommand())	
 	command thru (do()'s repetition()'s deferAnother("daily")'s getContents())
 	command thru (do()'s taskName()'s replace(aToken, "")'s getContents())
 	
@@ -59,7 +57,6 @@ script AddWeeklyRepeatRule
 	set aToken to " (Add weekly repeat)"
 	match by (taskName()'s endsWith(aToken)'s getContents())
 	
---	command thru (domain's DeferAnotherPeriodCommand's constructCommand())	
 	command thru (do()'s repetition()'s deferAnother("weekly")'s getContents())
 	command thru (do()'s taskName()'s replace(aToken, "")'s getContents())
 	
