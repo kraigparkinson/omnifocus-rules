@@ -1062,7 +1062,7 @@ script RepetitionRuleCommandBuilder
 		local aCommand
 		
 		if (repetitionRule is "defer") then
-			set aCommand to domain's DeferAnotherPeriodCommand's constructCommand()
+			set aCommand to domain's DeferAnotherCommand's constructCommand()
 		else if (repetitionRule is "due") then
 			set aCommand to domain's DueAgainCommand's constructCommand()
 		else if (repetitionRule is "fixed") then
@@ -1390,6 +1390,11 @@ script AbstractOmniFocusRuleSet
 	end processAll	
 end script 
 
+on registerRuleRepository(repo)
+	log "Registering rule repository, " & repo's name
+	set _ruleRepository to repo
+end registerRuleRepository
+
 on initializeRuleRepository()
 	log "Initializing rule repository."
 
@@ -1405,40 +1410,36 @@ on initializeRuleRepository()
 			return suite
 		end getAll
 	end script
-	
+
 	registerRuleRepository(FileLoadingRuleRepository)
 end initializeRuleRepository
-
-on registerRuleRepository(repo)
-	log "Registering rule repository, " & repo's name
-	set _ruleRepository to repo
-end registerRuleRepository
 
 on locateRuleRepository()
 	if _ruleRepository is missing value
 		log "Rule repository has not yet been registered."
 		initializeRuleRepository()
 	end if
-	
+
 	log "Located rule repository, " & _ruleRepository's name
 	return _ruleRepository
 end locateRuleRepository
 
-on processInbox()
-	log "Process Inbox called."
+script RuleProcessingService
+	on processInbox()
+		log "Process Inbox called."
 
-	set ruleRepository to locateRuleRepository()
-	set suite to ruleRepository's getAll()
-	tell suite to exec()
+		set ruleRepository to locateRuleRepository()
+		set suite to ruleRepository's getAll()
+		tell suite to exec()
 	
-	log "Process Inbox completed."	
-end processInbox
+		log "Process Inbox completed."	
+	end processInbox
 
-on processAllRules()
-	set repo to locateRuleRepository()
+	on processAllRules()
+		set repo to locateRuleRepository()
 
-	--Do stuff	
-	set suite to repo's getAll()
-	tell suite to exec()
-end processAllRules
-
+		--Do stuff	
+		set suite to repo's getAll()
+		tell suite to exec()
+	end processAllRules
+end script

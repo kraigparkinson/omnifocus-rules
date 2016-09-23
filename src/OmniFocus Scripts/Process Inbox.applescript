@@ -8,6 +8,6 @@ property id : "Process Inbox"
 
 on run	
 	
-	tell hobson to processInbox()
+	tell hobson's RuleProcessingService to processInbox()
 			
 end run

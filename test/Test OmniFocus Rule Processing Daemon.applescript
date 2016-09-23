@@ -5,7 +5,6 @@
 	@copyright 2015 kraigparkinson
 *)
 property daemon : script "OmniFocus Rule Processing Daemon"
-property rules : script "com.kraigparkinson/Hobson"
 property parent : script "com.lifepillar/ASUnit"
 
 property suite : makeTestSuite("OmniFocus Rule Processing Daemon")
@@ -39,7 +38,7 @@ script |Hazel Rule Processing|
 			end getAll
 		end script
 		
-		tell daemon's rules to registerRuleRepository(MockRuleRepository)
+		tell daemon's hobson to registerRuleRepository(MockRuleRepository)
 		
 		set hazelResult to daemon's hazelProcessFile(theFile, inputAttributes)
 		

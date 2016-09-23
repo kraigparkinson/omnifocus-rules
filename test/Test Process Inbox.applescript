@@ -37,7 +37,7 @@ script |Runs as Expected|
 		
 		tell processInboxScript's hobson to registerRuleRepository(MockRuleRepository)
 		
-		run processInboxScript
+		run processInboxScript		
 	end script
 	
 end script
