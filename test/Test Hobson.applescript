@@ -1,13 +1,17 @@
+use AppleScript version "2.4"
+use scripting additions
+
 (*!
 	@header Test OmniFocus Rule Parsing Daemon self tests.
 	@abstract License: GNU GPL, see COPYING for details.
 	@author Kraig Parkinson
 	@copyright 2015 kraigparkinson
 *)
-property textutil : script "com.kraigparkinson/ASText"
-property dateutil : script "com.kraigparkinson/ASDate"
-property domain : script "com.kraigparkinson/OmniFocusDomain"
-property rules : script "com.kraigparkinson/Hobson"
+
+use textutil : script "com.kraigparkinson/ASText"
+use dateutil : script "com.kraigparkinson/ASDate"
+use domain : script "com.kraigparkinson/OmniFocusDomain"
+use rules : script "com.kraigparkinson/Hobson"
 
 property parent : script "com.lifepillar/ASUnit"
 
@@ -274,7 +278,8 @@ script |DateSpecification|
 	script |Should find dates in the next range|
 		property parent : UnitTest(me)
 		
-		set actual to dateutil's CalendarDate's create on current date
+		local actual
+		set actual to (dateutil's CalendarDate's create on current date)
 
 		assert(rules's DateSpecification's inTheNextSpecification(1, rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual's asDate()), "Date should be in the next day")
 		assert(rules's DateSpecification's inTheNextSpecification(7, rules's ValueRetrievalStrategy)'s isSatisfiedBy(((actual's increment by 7)'s asDate()) - 1), "Date should be in the next week")
@@ -285,6 +290,7 @@ script |DateSpecification|
 	script |Should find dates in the last range|
 		property parent : UnitTest(me)
 		
+		local actual
 		set actual to dateutil's CalendarDate's create on current date
 
 		assert(rules's DateSpecification's inTheLastSpecification(1, rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual's asDate()), "Date should be in the next day")
@@ -316,19 +322,19 @@ script |TaskNameRetrievalStrategy|
 			set builder to make new rules's TextSpecificationBuilder with data rules's TaskNameRetrievalStrategy
 		end tell
 		
+		set domain's _taskRepository to domain's DocumentTaskRepository
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 	
@@ -681,16 +687,15 @@ script |TaskRenaming|
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 	
@@ -704,9 +709,7 @@ script |TaskRenaming|
 		set aCommand to aBuilder's rename("Bar")'s getContents()
 		tell aCommand to execute(aTask)
 		
-		tell application "OmniFocus"
-			my assertEqual("Bar", aTask's name)
-		end tell
+		assertEqual("Bar", aTask's getName())
 	end script
 	
 	script |Should prepend text to name|
@@ -719,9 +722,7 @@ script |TaskRenaming|
 		set aCommand to aBuilder's prepend("Bar")'s getContents()
 		tell aCommand to execute(aTask)
 		
-		tell application "OmniFocus"
-			my assertEqual("BarFoo", aTask's name)
-		end tell
+		assertEqual("BarFoo", aTask's getName())
 		
 	end script
 
@@ -733,9 +734,7 @@ script |TaskRenaming|
 		set aCommand to aBuilder's append("Bar")'s getContents()
 		tell aCommand to execute(aTask)
 		
-		tell application "OmniFocus"
-			my assertEqual("FooBar", aTask's name)
-		end tell
+		assertEqual("FooBar", aTask's getName())
 
 	end script
 	
@@ -748,9 +747,7 @@ script |TaskRenaming|
 		set aCommand to aBuilder's replace("oo", "aa")'s getContents()
 		tell aCommand to execute(aTask)
 		
-		tell application "OmniFocus"
-			my assertEqual("Faa", aTask's name)
-		end tell		
+		assertEqual("Faa", aTask's getName())
 	end script
 end script
 
@@ -764,16 +761,15 @@ script |ContextConditionBuilder|
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 
@@ -810,7 +806,7 @@ script |DateConditionBuilder|
 		end tell
 		
 		set aSpec to dueDate's isBefore(date "2015-01-01")'s getContents()
-		log "Spec name: " & aSpec's name
+--		log "Spec name: " & aSpec's name
 		
 		assert(aSpec's isSatisfiedBy(date "2014-12-31"), "Should match date that comes the day before")
 		refute(aSpec's isSatisfiedBy(date "2015-01-01"), "Should not match date that comes on same date")
@@ -826,7 +822,7 @@ script |DateConditionBuilder|
 		end tell
 		
 		set aSpec to dueDate's isAfter(date "2015-01-01")'s getContents()
-		log "Spec name: " & aSpec's name
+--		log "Spec name: " & aSpec's name
 		
 		refute(aSpec's isSatisfiedBy(date "2014-12-31"), "Should not match date that comes the day before")
 		refute(aSpec's isSatisfiedBy(date "2015-01-01"), "Should not match date that comes on same date")
@@ -842,19 +838,20 @@ script |RuleBase|
 	
 	on setUp()
 		set taskFixtures to { }
+		
+		set domain's _taskRepository to domain's DocumentTaskRepository
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 
@@ -930,19 +927,20 @@ script |Rule Runner|
 	
 	on setUp()
 		set taskFixtures to { }
+		
+		set domain's _taskRepository to domain's DocumentTaskRepository
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 	
@@ -977,7 +975,7 @@ script |Rule Runner|
 		 
 		script TestRuleScript
 			property parent : Rules
-			property suite : Rules's makeRuleSuite("Test Rule Suite")					
+			property suite : rules's makeRuleSuite("Test Rule Suite")					
 		end script		
 		
 		script TestRuleSet
@@ -1036,9 +1034,7 @@ script |Rule Runner|
 		
 		set aContext to domain's ContextRepository's findByName("Considerations")
 
-		tell application "OmniFocus"
-			my assertEqual(aContext, aTask's context)
-		end tell
+		assertEqual(aContext, aTask's _contextValue())
 	end script
 end script --|Rule Runner|
 
@@ -1052,16 +1048,15 @@ script |AbstractOmniFocusRuleSet|
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 	
@@ -1185,16 +1180,15 @@ script |OmniFocus Rule Processing Daemon|
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 		

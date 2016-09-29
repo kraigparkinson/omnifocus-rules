@@ -1,10 +1,14 @@
+use AppleScript version "2.4"
+use scripting additions
+
+use daemon : script "OmniFocus Rule Processing Daemon"
+
 (*!
 	@header Test OmniFocus Rule Parsing Daemon self tests.
 	@abstract License: GNU GPL, see COPYING for details.
 	@author Kraig Parkinson
 	@copyright 2015 kraigparkinson
 *)
-property daemon : script "OmniFocus Rule Processing Daemon"
 property parent : script "com.lifepillar/ASUnit"
 
 property suite : makeTestSuite("OmniFocus Rule Processing Daemon")

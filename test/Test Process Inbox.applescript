@@ -1,10 +1,14 @@
+use Applescript version "2.4"
+use scripting additions
+
+use processInboxScript : script "Process Inbox"
+
 (*!
 	@header Test OmniFocus Rule Parsing Daemon self tests.
 	@abstract License: GNU GPL, see COPYING for details.
 	@author Kraig Parkinson
 	@copyright 2015 kraigparkinson
 *)
-property processInboxScript : script "Process Inbox"
 property parent : script "com.lifepillar/ASUnit"
 
 property suite : makeTestSuite("Process Inbox")

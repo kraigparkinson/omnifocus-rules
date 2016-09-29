@@ -1,7 +1,9 @@
 #!/usr/bin/osascript
 use AppleScript version "2.4"
 use scripting additions
+
 use ASMake : script "com.lifepillar/ASMake" version "0.2.1"
+
 property parent : ASMake
 property TopLevel : me
 

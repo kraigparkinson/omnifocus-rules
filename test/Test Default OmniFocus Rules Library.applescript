@@ -4,8 +4,11 @@
 	@author Kraig Parkinson
 	@copyright 2015 kraigparkinson
 *)
-property domain : script "com.kraigparkinson/OmniFocusDomain"
-property cfr : script "com.kraigparkinson/Default OmniFocus Rules Library"
+use Applescript version "2.4"
+use scripting additions
+
+use domain : script "com.kraigparkinson/OmniFocusDomain"
+use cfr : script "com.kraigparkinson/Default OmniFocus Rules Library"
 
 property parent : script "com.lifepillar/ASUnit"
 property suite : makeTestSuite("Default OmniFocus Rules Library")
@@ -22,14 +25,14 @@ script |Has Children Specification|
 	on setUp()
 		set taskFixtures to { }
 		set contextFixtures to { }
+		
+		set domain's _taskRepository to domain's DocumentTaskRepository
 	end setUp
 
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in my taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 		tell application "OmniFocus"
 			repeat with aContext in my contextFixtures
 				delete aContext
@@ -38,8 +41,9 @@ script |Has Children Specification|
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 
@@ -48,9 +52,9 @@ script |Has Children Specification|
 		set aChildTask to createInboxTask("Test Child")
 
 		tell application "OmniFocus"
-			set aChildTask to end of aParentTask's tasks
+			set aChildTask to end of aParentTask's original's tasks
 
-			assertEqual(1, aParentTask's number of tasks)
+			assertEqual(1, aParentTask's original's number of tasks)
 		end tell
 	end script
 end script
@@ -67,11 +71,9 @@ script |Add OmniOutliner Template as Children|
 	end setUp
 
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in my taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 		tell application "OmniFocus"
 			repeat with aContext in my contextFixtures
 				delete aContext
@@ -80,8 +82,9 @@ script |Add OmniOutliner Template as Children|
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 
@@ -106,11 +109,9 @@ script |Tidy Incomplete Consideration Tasks Rule|
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in my taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 		tell application "OmniFocus"
 			repeat with aContext in my contextFixtures
 				delete aContext
@@ -119,8 +120,9 @@ script |Tidy Incomplete Consideration Tasks Rule|
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 	
@@ -137,7 +139,7 @@ script |Tidy Incomplete Consideration Tasks Rule|
 		set aContext to createContext("Test Context")
 		
 		tell application "OmniFocus"
-			set aTask's context to aContext
+			set aTask's original's context to aContext
 		end tell
 		
 		set aRule to cfr's TidyConsiderationsRule's constructRule()
@@ -175,8 +177,8 @@ script |Tidy Incomplete Consideration Tasks Rule|
 		tell application "OmniFocus"
 			set expectedRepetitionRule to {repetition method:start after completion, recurrence:"FREQ=DAILY"}
 			
-			my assertEqual(aContext, aTask's context)
-			my assertEqual(expectedRepetitionRule, aTask's repetition rule)
+			my assertEqual(aContext, aTask's original's context)
+			my assertEqual(expectedRepetitionRule, aTask's original's repetition rule)
 		end tell
 		
 	end script
@@ -195,11 +197,9 @@ script |Add Daily Repeat Rule|
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in my taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 		tell application "OmniFocus"
 			repeat with aContext in my contextFixtures
 				delete aContext
@@ -208,8 +208,9 @@ script |Add Daily Repeat Rule|
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 	
@@ -257,8 +258,8 @@ script |Add Daily Repeat Rule|
 		
 		tell application "OmniFocus"
 			set expectedRepetitionRule to {repetition method:start after completion, recurrence:"FREQ=DAILY"}
-			my assertEqual("Consider", aTask's name)
-			my assertEqual(expectedRepetitionRule, aTask's repetition rule)
+			my assertEqual("Consider", aTask's getName())
+			my assertEqual(expectedRepetitionRule, aTask's original's repetition rule)
 		end tell
 		
 	end script
@@ -278,11 +279,9 @@ script |Expired Meeting Preparation Rule|
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in my taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 		tell application "OmniFocus"
 			repeat with aContext in my contextFixtures
 				delete aContext
@@ -291,8 +290,9 @@ script |Expired Meeting Preparation Rule|
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 	
@@ -306,9 +306,8 @@ script |Expired Meeting Preparation Rule|
 		property parent : UnitTest(me)
 		
 		set aTask to createInboxTask("Prepare for your meeting 'Foo'")
-		tell application "OmniFocus"
-			set aTask's due date to current date - 1 * days
-		end tell
+
+		aTask's dueOn(current date - 1 * days)
 				
 		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
 		tell aRule to run
@@ -322,9 +321,8 @@ script |Expired Meeting Preparation Rule|
 		property parent : UnitTest(me)
 		
 		set aTask to createInboxTask("Prepare for your recurring meeting 'Foo'")
-		tell application "OmniFocus"
-			set aTask's due date to current date - 1 * days
-		end tell
+
+		aTask's dueOn(current date - 1 * days)
 				
 		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
 		tell aRule to run
@@ -338,9 +336,8 @@ script |Expired Meeting Preparation Rule|
 		property parent : UnitTest(me)
 		
 		set aTask to createInboxTask("Prepare for your meeting 'Doe'")
-		tell application "OmniFocus"
-			set aTask's due date to current date + 1 * days
-		end tell
+		
+		aTask's dueOn(current date + 1 * days)
 		
 		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
 		tell aRule to run
@@ -354,9 +351,7 @@ script |Expired Meeting Preparation Rule|
 		property parent : UnitTest(me)
 		
 		set aTask to createInboxTask("Prepare for your meeting 'Doe'")
-		tell application "OmniFocus"
-			set aTask's due date to current date - 1 * days
-		end tell
+		aTask's dueOn(current date - 1 * days)
 		
 		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
 		tell aRule to run
@@ -364,7 +359,7 @@ script |Expired Meeting Preparation Rule|
 		tell aRule to processTask(aTask, { })
 		
 		tell application "OmniFocus"
-			my assert(aTask's completed, "Should have marked completed.")
+			my assert(aTask's hasBeenCompleted(), "Should have marked completed.")
 		end tell
 		
 	end script
@@ -383,11 +378,9 @@ script |Evernote TaskClone Preparation Rule|
 	end setUp
 	
 	on tearDown()
-		tell application "OmniFocus"
-			repeat with aTask in my taskFixtures
-				delete aTask
-			end repeat
-		end tell
+		repeat with aTask in my taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
 		tell application "OmniFocus"
 			repeat with aContext in my contextFixtures
 				delete aContext
@@ -396,8 +389,9 @@ script |Evernote TaskClone Preparation Rule|
 	end tearDown
 
 	on createInboxTask(transportText)
-		set newTask to domain's TaskRepository's createInboxTaskWithName(transportText)
-		set end of taskFixtures to newTask		
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
 		return newTask 		
 	end createInboxTask
 	
@@ -438,9 +432,7 @@ script |Evernote TaskClone Preparation Rule|
 				
 		tell aRule to processTask(aTask, { })
 		
-		tell application "OmniFocus"
-			my assertEqual("--Catch up with Dave |EN|", aTask's name)
-		end tell
+		assertEqual("--Catch up with Dave |EN|", aTask's getName())
 		
 	end script
 	

@@ -1,5 +1,10 @@
-use AppleScript version "2.4"
-use scripting additions
+--use AppleScript version "2.4"
+--use scripting additions
+
+property ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
+property domain : script "com.kraigparkinson/OmniFocusDomain"
+property rules : script "com.kraigparkinson/Hobson"
+
 
 (*! @abstract <em>[text]</em> Creating Flow with OmniFocus's name. *)
 property name : "Default OmniFocus Rules Library"
@@ -7,12 +12,6 @@ property name : "Default OmniFocus Rules Library"
 property version : "1.0.0"
 (*! @abstract <em>[text]</em> Creating Flow with OmniFocus's id. *)
 property id : "com.kraigparkinson.Default OmniFocus Rules Library"
-
-
-property textutil : script "com.kraigparkinson/ASText"
-property ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
-property domain : script "com.kraigparkinson/OmniFocusDomain"
-property rules : script "com.kraigparkinson/Hobson"
 
 
 script TidyConsiderationsRule
@@ -120,14 +119,9 @@ script ProjectTarget
 	
 	on getTasks()
 		set aProject to domain's ProjectRepository's findByName(projectName)
-		
-		local theTasks
-		tell application "OmniFocus"
-			set theTasks to aProject's tasks
-		end tell
-		
+		set theTasks to domain's taskRepositoryInstance()'s selectTasksFromProject(aProject)
+				
 		return theTasks
-		
 	end getTasks
 
 end script
@@ -141,11 +135,7 @@ script MeetingsToPrepareTarget
 	
 	on getTasks()
 		set aProject to domain's ProjectRepository's findByName("Meetings to plan")
-		
-		local theTasks
-		tell application "OmniFocus"
-			set theTasks to aProject's tasks
-		end tell
+		set theTasks to domain's taskRepositoryInstance()'s selectTasksFromProject(aProject)
 		
 		return theTasks
 	end getTasks
@@ -163,7 +153,7 @@ script OmniFocusTransportTextParsingRule
 		property parent : domain's TaskCommand
 		
 		on execute(aTask)
-			set oftt to script "com.kraigparkinson/OmniFocusTransportTextParsingService"
+			set oftt to domain's TransportTextParsingService
 			
 			set aService to oftt's OmniFocusTransportTextService
 		

@@ -1,5 +1,10 @@
-use AppleScript version "2.4"
+use AppleScript version "2.5"
 use scripting additions
+
+use textutil : script "com.kraigparkinson/ASText"
+use dateutil : script "com.kraigparkinson/ASDate"
+use ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
+use domain : script "com.kraigparkinson/OmniFocusDomain"
 
 (*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's name. *)
 property name : "Hobson"
@@ -8,42 +13,9 @@ property version : "1.0.0"
 (*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's id. *)
 property id : "com.kraigparkinson.Hobson"
 
---use OmniFocus : application "OmniFocus"
---use domain : script "com.kraigparkinson/OmniFocusDomain"
-
-property textutil : script "com.kraigparkinson/ASText"
-property dateutil : script "com.kraigparkinson/ASDate"
-property ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
-property domain : script "com.kraigparkinson/OmniFocusDomain"
-
 property _ruleRepository : missing value
 
-script TaskProxy
-	property originalTask : missing value
-	property timeoutValue : 3
-	
-	on newTaskProxy(aTask)
-		copy TaskProxy to aProxy
-		set aProxy's originalTask to aTask
-		return aProxy
-	end newTaskProxy
-	
-	on getName()
-		tell application "OmniFocus"
-			with timeout of timeoutValue seconds
-				return originalTask's name
-			end timeout
-		end tell
-	end getName
-	
-	on setName(newName)
-		tell application "OmniFocus"
-			with timeout of timeoutValue seconds
-				set originalTask's name to newName
-			end timeout
-		end tell
-	end setName
-end script
+--set domain's _taskRepository to domain's DocumentTaskRepository
 
 script RuleSentinel
 	property parent : AppleScript
@@ -90,30 +62,30 @@ on makeRuleSuite(aName)
 		property ruleSets : { }
 		
 		on addRuleSet(aRuleSet)
-			log "Adding rule set: " & aRuleSet's name
+--			log "Adding rule set: " & aRuleSet's name
 			set end of ruleSets to aRuleSet
 		end addRuleSet		
 		
 		on exec()
 			
 			
-			log "Starting to execute rules for suite: " & name
+--			log "Starting to execute rules for suite: " & name
 			
 			repeat with aSet in ruleSets
-				log "Starting to prepare rule set for processing: " & aSet's name
+--				log "Starting to prepare rule set for processing: " & aSet's name
 				tell aSet to run
-				log "Finished preparing rule set for processing: " & aSet's name
+--				log "Finished preparing rule set for processing: " & aSet's name
 				
-				log "Starting to process rule set: " & aSet's name
+--				log "Starting to process rule set: " & aSet's name
 				tell aSet's target's construct() to accept(aSet's rules) 
 --				tell aSet's target to accept(aSet's rules) 
-				log "Finished processing rule set: " & aSet's name
+--				log "Finished processing rule set: " & aSet's name
 
 			end repeat
 
 			tell application "OmniFocus" to compact
 
-			log "Finished executing rules for suite: " & name
+--			log "Finished executing rules for suite: " & name
 
 (*			
 			log "evaluate called with rule: " & aRuleType's prettyName()
@@ -136,7 +108,7 @@ script RuleSetBase
 	on addRuleSet(aRuleSet)
 		set aSuite to aRuleSet's parent's suite			
 		tell aSuite to addRuleSet(aRuleSet)
-		log "Added rule set: " & aRuleSet's name & " to rule suite: " & aSuite's name
+--		log "Added rule set: " & aRuleSet's name & " to rule suite: " & aSuite's name
 	end addRuleSet
 	
 end script
@@ -270,7 +242,7 @@ script TaskNameRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 	
 	on getValue(aTask)
-		return TaskProxy's newTaskProxy(aTask)'s getName()		
+		return aTask's getName()		
 	end getValue
 end script
 
@@ -278,11 +250,9 @@ script ContextNameRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 	
 	on getValue(aTask)
-		tell application "OmniFocus"
-			with timeout of 3 seconds
-				return aTask's context's name
-			end timeout
-		end tell
+		using terms from application "OmniFocus"
+			return aTask's original's context's name
+		end using terms from
 	end getValue
 end script
 
@@ -290,11 +260,7 @@ script DueDateRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 	
 	on getValue(aTask)
-		tell application "OmniFocus"
-			with timeout of 3 seconds
-				return aTask's due date
-			end timeout
-		end tell
+		return aTask's _dueDateValue()
 	end getValue
 end script
 
@@ -302,11 +268,7 @@ script DeferDateRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 	
 	on getValue(aTask)
-		tell application "OmniFocus"
-			with timeout of 3 seconds
-				return aTask's defer date
-			end timeout
-		end tell
+		return aTask's _deferDateValue()
 	end getValue
 end script
 
@@ -476,6 +438,8 @@ script DateSpecification
 		script 
 			property parent : DateValidationStrategy
 			on validateDate(actual)
+				local referenceCalDate
+				
 				set referenceCalDate to (dateutil's CalendarDate's create on current date)'s increment by specifiedDays
 				set dateDifference to (referenceCalDate's asDate() - actual) / days
 				
@@ -493,7 +457,9 @@ script DateSpecification
 		script 
 			property parent : DateValidationStrategy
 			on validateDate(actual)
+				local referenceCalDate
 				set referenceCalDate to (dateutil's CalendarDate's create on current date)'s increment by -specifiedDays
+				
 				set dateDifference to (actual - referenceCalDate's asDate()) / days
 				
 				return (dateDifference ≤ specifiedDays) and (dateDifference > 0)
@@ -878,10 +844,7 @@ script SetTaskNameCommand
 	property newTaskName : missing value
 
 	on execute(aTask)
-		local taskName
-		
-		set aTaskProxy to TaskProxy's newTaskProxy(aTask)
-		tell aTaskProxy to setName(newTaskName)
+		tell aTask to setName(newTaskName)
 	end execute
 end script 
 
@@ -892,16 +855,15 @@ script StripTokenFromTaskNameCommand
 	on execute(aTask)
 		local taskName
 		
-		set aTaskProxy to TaskProxy's newTaskProxy(aTask)
-		set taskName to aTaskProxy's getName()
+		set taskName to aTask's getName()
 		
-		tell textutil
+		using terms from script "com.kraigparkinson/ASText"
 			set originalTaskNameStr to textutil's StringObj's makeString(taskName)
 			set revisedTaskNameStr to originalTaskNameStr's removeText(token)
 			set revisedTaskName to revisedTaskNameStr's asText()
-		end tell
+		end using terms from
 
-		tell aTaskProxy to setName(revisedTaskName)
+		tell aTask to setName(revisedTaskName)
 	end execute
 		
 end script
@@ -914,12 +876,12 @@ script ReplaceTokenFromTaskNameCommand
 	on execute(aTask)
 		local taskName
 		
-		set aTaskProxy to TaskProxy's newTaskProxy(aTask)
-		set taskName to aTaskProxy's getName()
+		set taskName to aTask's getName()
 		
+		local revisedTaskName
 		set revisedTaskName to textutil's StringObj's makeString(taskName)'s replaceText(findToken, replaceToken)'s asText()
 
-		tell aTaskProxy to setName(revisedTaskName)
+		tell aTask to setName(revisedTaskName)
 	end execute
 end script
 
@@ -930,11 +892,10 @@ script AppendTextToTaskNameCommand
 	on execute(aTask)
 		local taskName
 
-		set aTaskProxy to TaskProxy's newTaskProxy(aTask)
-		set taskName to aTaskProxy's getName()
+		set taskName to aTask's getName()
 		
 		set revisedTaskName to taskName & textToAppend
-		tell aTaskProxy to setName(revisedTaskName)
+		tell aTask to setName(revisedTaskName)
 	end execute
 end script
 
@@ -945,11 +906,10 @@ script PrependTextToTaskNameCommand
 	on execute(aTask)
 		local taskName
 
-		set aTaskProxy to TaskProxy's newTaskProxy(aTask)
-		set taskName to aTaskProxy's getName()
+		set taskName to aTask's getName()
 		
 		set revisedTaskName to textToPrepend & taskName
-		tell aTaskProxy to setName(revisedTaskName)
+		tell aTask to setName(revisedTaskName)
 	end execute
 end script
 
@@ -959,9 +919,7 @@ script HasChildrenSpecification
 	
 	on isSatisfiedBy(aTask)
 		tell application "OmniFocus"
-			with timeout of 3 seconds
-				return aTask's number of tasks is greater than 0
-			end timeout
+			return aTask's original's number of tasks is greater than 0
 		end tell
 	end isSatisfiedBy
 end script
@@ -1184,7 +1142,7 @@ script RuleBase
 	on rename(newName)
 		script 
 			on execute(aTask)
-				TaskProxy's newTaskProxy(aTask)'s setName(newName)
+				aTask's setName(newName)
 			end execute
 		end script
 		return the result
@@ -1293,8 +1251,8 @@ script Inbox
 	end defineName
 	
 	on getTasks()
-		return domain's TaskRepository's selectAllInboxTasks()
---		return TaskRepository's selectAllInboxTasks()
+		return domain's taskRepositoryInstance()'s selectAllInboxTasks()
+--		return taskRepositoryInstance()'s selectAllInboxTasks()
 	end getTasks
 end script
 
@@ -1306,8 +1264,8 @@ script DocumentTarget
 	end defineName
 	
 	on getTasks()
-		return domain's TaskRepository's selectAll()
---		return TaskRepository's selectAll()
+		return domain's taskRepositoryInstance()'s selectAll()
+--		return taskRepositoryInstance()'s selectAll()
 	end getTasks
 end script
 
@@ -1321,14 +1279,8 @@ script ProjectTarget
 
 	on getTasks()
 		set aProject to domain's ProjectRepository's findByName(projectName)
-
-		local theTasks
-		tell application "OmniFocus"
-			with timeout of 3 seconds
-				set theTasks to aProject's tasks
-			end timeout
-		end tell
-
+		set theTasks to domain's taskRepositoryInstance()'s selectTasksFromProject(aProject)
+		
 		return theTasks
 	end getTasks
 end script
@@ -1355,8 +1307,7 @@ script UserSpecifiedTasks
 	end defineName
 	
 	on getTasks()
-		return domain's TaskRepository's selectUserSpecifiedTasks()
---		return TaskRepository's selectUserSpecifiedTasks()
+		return domain's taskRepositoryInstance()'s selectUserSpecifiedTasks()
 	end getTasks
 end script
 

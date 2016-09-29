@@ -1,7 +1,7 @@
 use AppleScript version "2.4"
 use scripting additions
 
-property Rules : script "com.kraigparkinson/Hobson"
+use Rules : script "com.kraigparkinson/Hobson"
 --use Rules : script "com.kraigparkinson/Hobson"
 use cf : script "com.kraigparkinson/Default OmniFocus Rules Library"
 
