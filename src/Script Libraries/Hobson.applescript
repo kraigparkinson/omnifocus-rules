@@ -15,13 +15,46 @@ property id : "com.kraigparkinson.Hobson"
 
 property _ruleRepository : missing value
 
+property dry : false
+property debug : true
+property verbose : true
+
 --set domain's _taskRepository to domain's DocumentTaskRepository
+
+-----------------------------
+-- Output-related handlers --
+-----------------------------
+
+(*! @abstract TODO. *)
+on ofail(s)
+	log "Fail:" & space & s
+end ofail
+
+(*! @abstract TODO. *)
+on ohai(s)
+	log "==>" & space & s
+end ohai
+
+(*! @abstract TODO. *)
+on odebug(s)
+	if my debug then log "DEBUG:" & space & s
+end odebug
+
+(*! @abstract Logs a message only in verbose mode. *)
+on overb(s as text)
+	if my verbose and s is not "" then log s
+end overb
+
+(*! @abstract TODO. *)
+on owarn(s)
+	log "Warn:" & space & s
+end owarn
 
 script RuleSentinel
 	property parent : AppleScript
 end script
 
-on makeRuleLoader()
+on _makeRuleLoader()
 	script RuleLoader
 	
 		on isSatisfiedBy(aScript)
@@ -54,7 +87,7 @@ on makeRuleLoader()
 	end script
 	
 	return RuleLoader
-end makeRuleLoader
+end _makeRuleLoader
 
 on makeRuleSuite(aName)
 	script 
@@ -62,39 +95,27 @@ on makeRuleSuite(aName)
 		property ruleSets : { }
 		
 		on addRuleSet(aRuleSet)
---			log "Adding rule set: " & aRuleSet's name
+			odebug("Adding rule set: " & aRuleSet's name)
 			set end of ruleSets to aRuleSet
 		end addRuleSet		
 		
 		on exec()
-			
-			
---			log "Starting to execute rules for suite: " & name
+						
+			overb("Starting to execute rules for suite: " & name)
 			
 			repeat with aSet in ruleSets
---				log "Starting to prepare rule set for processing: " & aSet's name
+				overb("Starting to prepare rule set for processing: " & aSet's name)
 				tell aSet to run
---				log "Finished preparing rule set for processing: " & aSet's name
+				overb("Finished preparing rule set for processing: " & aSet's name)
 				
---				log "Starting to process rule set: " & aSet's name
-				tell aSet's target's construct() to accept(aSet's rules) 
---				tell aSet's target to accept(aSet's rules) 
---				log "Finished processing rule set: " & aSet's name
-
+				overb("Starting to process rule set: " & aSet's name)
+				tell aSet's target to accept(aSet's rules) 
+				overb("Finished processing rule set: " & aSet's name)
 			end repeat
 
 			tell application "OmniFocus" to compact
 
---			log "Finished executing rules for suite: " & name
-
-(*			
-			log "evaluate called with rule: " & aRuleType's prettyName()
-			set aRule to aRuleType's constructRule()
-		
-			set aTarget to my target's construct()
-		
-			tell aTarget to accept({aRule})
-*)			
+			overb("Finished executing rules for suite: " & name)
 		end exec
 	end 
 	
@@ -108,7 +129,7 @@ script RuleSetBase
 	on addRuleSet(aRuleSet)
 		set aSuite to aRuleSet's parent's suite			
 		tell aSuite to addRuleSet(aRuleSet)
---		log "Added rule set: " & aRuleSet's name & " to rule suite: " & aSuite's name
+		odebug("Added rule set: " & aRuleSet's name & " to rule suite: " & aSuite's name)
 	end addRuleSet
 	
 end script
@@ -127,10 +148,10 @@ on makeRuleSet()
 				set ruleName to aRuleType's name
 			end if 
 			
-			log "Adding rule to evaluate: " & ruleName
+			overb("Adding rule to evaluate: " & ruleName)
 			
-			set aRule to aRuleType's constructRule()
---			set aRule to aRuleType
+			set aRule to aRuleType
+
 			--Initialize the actions and commands from the rule			
 			tell aRule to run
 			
@@ -145,92 +166,166 @@ on RuleSet(aRuleSet)
 	RuleSetBase's addRuleSet(aRuleSet)
 
 	return makeRuleSet()
-end makeRuleSet
+end RuleSet
 
-script OmniFocusTaskProcessingRule	
-	property name : missing value
+script RuleFactory
+	on _makeOmniFocusTaskProcessingRule(aName)
+		script OmniFocusTaskProcessingRule	
+			property name : aName
 
-	on constructRule()
-		copy me to aRule
-		return aRule
-	end constructRule
-
-	on prettyName()
-		return name
-	end prettyName
-
-	(*
-	@pre aTask must be an OmniFocus task
-	@post Returns boolean or record
-	*)
-	on matchTask(aTask, inputAttributes)
-	end matchTask
+			(*
+			@pre aTask must be an OmniFocus task
+			@post Returns boolean or record
+			*)
+			on matchTask(aTask, inputAttributes)
+			end matchTask
 	
-	(*
-	@post Throws error if there's a problem processing rule.
-	*)
-	on processTask(aTask, inputAttributes)
-	end processTask
+			(*
+			@post Throws error if there's a problem processing rule.
+			*)
+			on processTask(aTask, inputAttributes)
+			end processTask
 	
-	on accept(tasks)
+			on accept(tasks)
 		
-		set taskIndex to 1
-		repeat with aTask in tasks
-			log "[" & prettyName() & "]" & "Processing task" & space & taskIndex & space & "of" & space & count of tasks
+				set taskIndex to 1
+				repeat with aTask in tasks
+					overb("[" & name & "]" & "Processing task" & space & taskIndex & space & "of" & space & count of tasks)
 			
-			set inputAttributes to { }
+					set inputAttributes to { }
 	
-			set taskIsMatched to false
+					set taskIsMatched to false
 
-			try
-				set matchResult to matchTask(aTask, inputAttributes)
+					try
+						set matchResult to matchTask(aTask, inputAttributes)
 	
-				if (matchResult's class is boolean) 
-					log "[" & prettyName() & "]" & "Match result: " & matchResult
-					if (matchResult) 
-						set taskIsMatched to true
-					end if
-				else if (matchResult's class is record)
-					log "[" & prettyName() & "]" & "Match result: " & matchResult's passesCriteria
+						if (matchResult's class is boolean) 
+							odebug("[" & name & "]" & "Match result: " & matchResult)
+							if (matchResult) 
+								set taskIsMatched to true
+							end if
+						else if (matchResult's class is record)
+							odebug("[" & name & "]" & "Match result: " & matchResult's passesCriteria)
 					
-					if (matchResult's passesCriteria)
-						set taskIsMatched to true
-						set inputAttributes to matchResult's outputAttributes
-					end if
-				else 
-					error "[" & prettyName() & "]" & "Unrecognized response from matching handler: " & matchResult
-				end if
+							if (matchResult's passesCriteria)
+								set taskIsMatched to true
+								set inputAttributes to matchResult's outputAttributes
+							end if
+						else 
+							error "[" & name & "]" & "Unrecognized response from matching handler: " & matchResult
+						end if
 			
-			on error message
-				log "[" & prettyName() & "] Error occurred matching rule: " & message
-			end try
+					on error message
+						owarn("[" & name & "] Error occurred matching rule: " & message)
+					end try
 		
 			
-			if (taskIsMatched)
-				log "[" & prettyName() & "]" & "Processing commands."
+					if (taskIsMatched)
+						overb("[" & name & "]" & "Processing commands.")
 						
-				try
-					set processResult to processTask(aTask, inputAttributes)
+						try
+							set processResult to processTask(aTask, inputAttributes)
 						
-					if (processResult is not missing value and processResult's class is record)
-						if (ruleStop of processResult) then 
-							log "[" & prettyName() & "]" & "Rule ended task processing prematurely."						
-							exit repeat
-						end if
-					else 
-						log "[" & prettyName() & "]" & "Finished processing task."
-					end if 
+							if (processResult is not missing value and processResult's class is record)
+								if (ruleStop of processResult) then 
+									overb("[" & name & "]" & "Rule ended task processing prematurely.")						
+									exit repeat
+								end if
+							else 
+								overb("[" & name & "]" & "Finished processing task.")
+							end if 
 										
-				on error message 
-					log "[" & prettyName() & "] Error occurred processing rule: " & message
-				end try				
-			end if
+						on error message 
+							owarn("[" & name & "] Error occurred processing rule: " & message)
+						end try				
+					end if
 			
-			set taskIndex to taskIndex + 1
-		end repeat		
-	end accept
+					set taskIndex to taskIndex + 1
+				end repeat		
+			end accept
 	
-end script
+		end script
+		return OmniFocusTaskProcessingRule
+	end _makeOmniFocusTaskProcessingRule
+	
+
+	on makeConditionalCommandRule()
+		set conditions_list to { }
+		set actions_list to { }
+		
+		script ConditionalCommandRule	
+			property parent : RuleFactory's _makeOmniFocusTaskProcessingRule("ConditionalCommandRule")
+			property conditions : conditions_list
+			property actions : actions_list
+		
+			on match by aSpec
+				addCondition(aSpec)
+			end match
+	
+			on addCondition(aSpec)
+				odebug("[" & name & "]" & "Adding condition: " & aSpec's name)
+				set conditions's end to aSpec
+			end addCondition
+	
+			on command thru aCommand
+				addAction(aCommand)
+			end command
+	
+			on addAction(aCommand)
+				try
+					odebug("[" & name & "]" & "Adding action: " & aCommand's name)
+					set actions's end to aCommand
+				on error errMsg
+					owarn("Error adding action: " & errMsg)
+				end try
+			end addAction
+	
+			(*
+			@post Returns boolean or record
+			*)
+			on matchTask(aTask, inputAttributes)
+				--Implement all
+				set satisfiedConditions to 0
+		
+				odebug("[" & name & "]" & "Preparing to evaluate " & count of conditions & " conditions.")
+				repeat with condition in conditions
+					odebug("[" & name & "]" & "Evaluating condition: " & condition's name)
+					set matchResult to condition's isSatisfiedBy(aTask)
+			
+					if (matchResult's class is boolean)
+						odebug("[" & name & "]" & "Task meets condition: " & matchResult)
+			
+						if (matchResult) then set satisfiedConditions to satisfiedConditions + 1
+					else if (matchResult's class is record)
+						odebug("[" & name & "]" & "Task meets conditions: " & matchResult's passesCriteria)
+						if (matchResult's passesCriteria) then
+							set satisfiedConditions to satisfiedConditions + 1					
+							set inputAttributes to inputAttributes & matchREsult's outputAttributes
+						end if 
+					end 
+				end repeat
+		
+				set matched to (satisfiedConditions equals count of conditions)
+				odebug("[" & name & "]" & "Finished evaluating conditions for rule. Result: " & matched)
+				return matched
+			end matchTask
+	
+			(*
+			@post Throws error if there's a problem processing rule.
+			*)
+			on processTask(aTask, inputAttributes)
+				overb("[" & name & "]" & "Preparing to execute " & count of actions & " commands on task.")
+				repeat with anAction in actions
+					overb("[" & name & "]" & "Executing command: " & anAction's name)
+					tell anAction to execute(aTask)
+				end repeat
+				overb("[" & name & "]" & "Finished executing commands on task.")
+				return true
+			end processTask
+		end script
+		return ConditionalCommandRule
+	end makeConditionalCommandRule	
+end script --RuleFactory
 
 script ValueRetrievalStrategy
 	on getValue(obj)
@@ -243,6 +338,30 @@ script TaskNameRetrievalStrategy
 	
 	on getValue(aTask)
 		return aTask's getName()		
+	end getValue
+end script
+
+script NoteRetrievalStrategy
+	property parent : ValueRetrievalStrategy
+
+	on getValue(aTask)
+		return aTask's _noteValue()		
+	end getValue
+end script
+
+script CompletedRetrievalStrategy
+	property parent : ValueRetrievalStrategy
+	
+	on getValue(aTask)
+		return aTask's _completedValue()
+	end getValue
+end script
+
+script FlagRetrievalStrategy
+	property parent : ValueRetrievalStrategy
+	
+	on getValue(aTask)
+		return aTask's _flaggedValue()
 	end getValue
 end script
 
@@ -272,649 +391,806 @@ script DeferDateRetrievalStrategy
 	end getValue
 end script
 
-script TextSpecification
-	property parent : ddd's AbstractSpecification
-	property sourcingStrategy : missing value
-	property validationStrategy : missing value
-	property name : "TextSpecification"
-	
+script SpecificationFactory
 	script TextValidationStrategy
 		on matchesText(actual)
 		end matchesText
 	end 
-	
-	on make new TextSpecification with properties specProps as record
-		if (specProps is missing value) then error "Can't create TextSpecification with missing properties"
-		
-		if (specProps's sourcingStrategy is missing value) then error "TextSpecification properties should have a sourcingStrategy."
-		if (specProps's validationStrategy is missing value) then error "TextSpecification properties should have a validationStrategy."
-		
-		copy TextSpecification to aSpec
-		set aSpec's sourcingStrategy to specProps's sourcingStrategy
-		set aSpec's validationStrategy to specProps's validationStrategy
-		
-		return aSpec		
-	end make
-	
-	on isSatisfiedBy(obj)
-		if (sourcingStrategy is missing value) then error "TextSpecification's isSatisfiedBy(obj): missing sourcingStrategy"
-		return validationStrategy's matchesText(sourcingStrategy's getValue(obj))
-	end isSatisfiedBy
 
-	on sameAsSpecification(expected, textFetcher)
+	on makeTextSpecification(aSourcingStrategy, aValidationStrategy)
+		if (aSourcingStrategy is missing value) then error "TextSpecification properties should have a sourcingStrategy."
+		if (aValidationStrategy is missing value) then error "TextSpecification properties should have a validationStrategy."
+
+		script TextSpecification
+			property parent : ddd's DefaultSpecification
+			property sourcingStrategy : aSourcingStrategy
+			property validationStrategy : aValidationStrategy
+			property name : "TextSpecification"
+	
+			on isSatisfiedBy(obj)
+				return validationStrategy's matchesText(sourcingStrategy's getValue(obj))
+			end isSatisfiedBy
+		end script
+
+		return TextSpecification
+	end makeTextSpecification
+
+	on makeSameAsTextSpecification(expected, textFetcher)
 		script 
 			property parent : TextValidationStrategy
 			on matchesText(actual)
 				return expected equals actual
 			end matchesText
 		end script
-	
+
 		set validation to the result
-		set aSpec to make new TextSpecification with properties { sourcingStrategy:textFetcher, validationStrategy:validation }
+		set aSpec to makeTextSpecification(textFetcher, validation)
 		set aSpec's name to "same as " & expected
 		return aSpec
-	end sameAsSpecification
-	
-	on startsWithSpecification(startsWithText, textFetcher)
+	end makeSameAsTextSpecification
+
+	on makeStartsWithTextSpecification(startsWithText, textFetcher)
 		script 
 			property parent : TextValidationStrategy
 			on matchesText(actual)
 				return actual starts with startsWithText
 			end matchesText
 		end script
-	
+
 		set validation to the result
-		set aSpec to make new TextSpecification with properties { sourcingStrategy:textFetcher, validationStrategy:validation }
+		set aSpec to makeTextSpecification(textFetcher, validation)
 		set aSpec's name to "starts with >>" & startsWithText & "<<"
 		return aSpec
-	end startsWithSpecification
+	end makeStartsWithTextSpecification
 
-	on endsWithSpecification(endsWithText, textFetcher)
+	on makeEndsWithTextSpecification(endsWithText, textFetcher)
 		script 
 			property parent : TextValidationStrategy
 			on matchesText(actual)
 				return actual ends with endsWithText
 			end matchesText
 		end script
-	
+
 		set validation to the result
-		set aSpec to make new TextSpecification with properties { sourcingStrategy:textFetcher, validationStrategy:validation }
+		set aSpec to makeTextSpecification(textFetcher, validation)
 		set aSpec's name to "ends with >>" & endsWithText & "<<"
 		return aSpec
-	end endsWithSpecification
-	
-	on containsSpecification(containedText, textFetcher)
+	end makeEndsWithTextSpecification
+
+	on makeContainsTextSpecification(containedText, textFetcher)
 		script 
 			property parent : TextValidationStrategy
 			on matchesText(actual)
 				return actual contains containedText
 			end matchesText
 		end script
-	
+
 		set validation to the result
-		set aSpec to make new TextSpecification with properties { sourcingStrategy:textFetcher, validationStrategy:validation }
+		set aSpec to makeTextSpecification(textFetcher, validation)
 		set aSpec's name to "contains >>" & containedText & "<<"
 		return aSpec
-	end containsSpecification
-
-end script
-
-script DateSpecification
-	property parent : ddd's AbstractSpecification
-	property referenceValue : missing value
-	property sourcingStrategy : missing value
-	property validationStrategy : missing value
-	property name : "DateSpecification"
+	end makeContainsTextSpecification
 	
 	script DateValidationStrategy
 		on validateDate(actual)
 		end validateDate
 	end 
-	
-	on make new DateSpecification with properties specProps as record
-		if (specProps is missing value) then error "Can't create DateSpecification with missing properties"
-		
-		copy DateSpecification to aSpec
-		set aSpec's referenceValue to specProps's referenceValue
-		set aSpec's sourcingStrategy to specProps's dateRetrievalStrategy
-		set aSpec's validationStrategy to specProps's validationStrategy
-		
-		return aSpec		
-	end make
-	
-	on isSatisfiedBy(obj)
-		set expected to referenceValue
-		set actual to sourcingStrategy's getValue(obj)
-		
-		return validationStrategy's validateDate(actual)
-	end isSatisfiedBy
 
-	on sameAsSpecification(expected, dateFetcher)
+	on makeDateSpecification(aReferenceValue, aSourcingStrategy, aValidationStrategy)
+		if (aSourcingStrategy is missing value) then error "Can't create DateSpecification without a sourcing strategy."
+		if (aValidationStrategy is missing value) then error "Can't create DateSpecification without a validation strategy."
+		
+		script DateSpecification
+			property parent : ddd's DefaultSpecification
+			property referenceValue : aReferenceValue
+			property sourcingStrategy : aSourcingStrategy
+			property validationStrategy : aValidationStrategy
+			property class : "DateSpecification"
+			property name : "DateSpecification"
+	
+			on isSatisfiedBy(obj)
+				set expected to referenceValue
+				set actual to sourcingStrategy's getValue(obj)
+		
+				return validationStrategy's validateDate(actual)
+			end isSatisfiedBy
+		end script
+
+		return DateSpecification
+	end makeDateSpecification
+
+	on makeSameAsDateSpecification(expected, dateFetcher)
 		script 
 			property parent : DateValidationStrategy
 			on validateDate(actual)
 				return expected equals actual
 			end validateDate
 		end script
-	
+
 		set validation to the result
 
-		set aSpec to make new DateSpecification with properties { referenceValue:expected, dateRetrievalStrategy:dateFetcher, validationStrategy:validation }
+		set aSpec to makeDateSpecification(expected, dateFetcher, validation)
 		set aSpec's name to "same as " & expected
 		return aSpec
-	end sameAsSpecification
-	
-	on isBeforeSpecification(referenceDate, dateFetcher)
+	end makeSameAsDateSpecification
+
+	on makeIsBeforeDateSpecification(referenceDate, dateFetcher)
 		script 
 			property parent : DateValidationStrategy
 			on validateDate(actual)
 				set isValid to (actual comes before referenceDate)
-				log "Does actual: " & actual & " comes before: " & referenceDate & "? " & isValid
+				odebug("Does actual: " & actual & " comes before: " & referenceDate & "? " & isValid)
 				return isValid
 			end validateDate
 		end script
-	
+
 		set validation to the result
-		set aSpec to make new DateSpecification with properties { referenceValue:referenceDate, dateRetrievalStrategy:dateFetcher, validationStrategy:validation }
+		set aSpec to makeDateSpecification(referenceDate, dateFetcher, validation)
 		set aSpec's name to "is before " & referenceDate
 		return aSpec
-	end isBeforeSpecification
+	end makeIsBeforeDateSpecification
 
-	on isAfterSpecification(referenceDate, dateFetcher)
+	on makeIsAfterDateSpecification(referenceDate, dateFetcher)
 		script 
 			property parent : DateValidationStrategy
 			on validateDate(actual)
 				return actual comes after referenceDate
 			end validateDate
 		end script
-	
+
 		set validation to the result
-		set aSpec to make new DateSpecification with properties { referenceValue:referenceDate, dateRetrievalStrategy:dateFetcher, validationStrategy:validation }
+		set aSpec to makeDateSpecification(referenceDate, dateFetcher, validation)
 		set aSpec's name to "is after " & referenceDate
 		return aSpec
-	end isAfterSpecification
-	
-	on inTheNextSpecification(specifiedDays, dateFetcher)
+	end makeIsAfterDateSpecification
+
+	on makeInTheNextIntervalDateSpecification(specifiedDays, dateFetcher)
 		script 
 			property parent : DateValidationStrategy
 			on validateDate(actual)
 				local referenceCalDate
+				local dateDifference
 				
-				set referenceCalDate to (dateutil's CalendarDate's create on current date)'s increment by specifiedDays
+--				using terms from dateutil
+				set referenceCalDate to dateutil's CalendarDateFactory's today at "12:00:00AM"
+				set referenceCalDate to referenceCalDate's increment by specifiedDays
 				set dateDifference to (referenceCalDate's asDate() - actual) / days
-				
+--				end using terms from
+		
 				return (dateDifference ≤ specifiedDays) and (dateDifference > 0)
 			end validateDate
 		end script
-	
+
 		set validation to the result
-		set aSpec to make new DateSpecification with properties { referenceValue:specifiedDays, dateRetrievalStrategy:dateFetcher, validationStrategy:validation }
+		set aSpec to makeDateSpecification(specifiedDays, dateFetcher, validation)
 		set aSpec's name to "in the next " & specifiedDays & " days"
 		return aSpec
-	end inTheNextSpecification
+	end makeInTheNextIntervalDateSpecification
 
-	on inTheLastSpecification(specifiedDays, dateFetcher)
+	on makeInTheLastIntervalDateSpecification(specifiedDays, dateFetcher)
 		script 
 			property parent : DateValidationStrategy
 			on validateDate(actual)
 				local referenceCalDate
-				set referenceCalDate to (dateutil's CalendarDate's create on current date)'s increment by -specifiedDays
-				
+				set referenceCalDate to (dateutil's CalendarDateFactory's today at "12:00:00AM")'s increment by -specifiedDays
+		
 				set dateDifference to (actual - referenceCalDate's asDate()) / days
-				
+		
 				return (dateDifference ≤ specifiedDays) and (dateDifference > 0)
 			end validateDate
 		end script
-	
+
 		set validation to the result
-		set aSpec to make new DateSpecification with properties { referenceValue:specifiedDays, dateRetrievalStrategy:dateFetcher, validationStrategy:validation }
+		set aSpec to makeDateSpecification(specifiedDays, dateFetcher, validation)
 		set aSpec's name to "in the last " & specifiedDays & " days"
 		return aSpec
-	end inTheLastSpecification
+	end makeInTheLastIntervalDateSpecification
 
-	on missingSpecification(dateFetcher)
+	on makeMissingDateSpecification(dateFetcher)
 		script 
 			property parent : DateValidationStrategy
 			property name : "is missing"
-			
+	
 			on validateDate(actual)
 				return actual is missing value
 			end validateDate
 		end script
-	
+
 		set validation to the result
-		set aSpec to make new DateSpecification with properties { referenceValue:missing value, dateRetrievalStrategy:dateFetcher, validationStrategy:validation }
+		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
 		set aSpec's name to "missing date"
 		return aSpec
-	end missingSpecification
+	end makeMissingDateSpecification	
 	
-end script
-
-script MatchesTextSpecification
-	property parent : ddd's AbstractSpecification
-	property referenceText : missing value
-	property sourcingStrategy : missing value
-	property name : missing value
-	
-	on make new MatchesTextSpecification with properties conditionProps as record
+	on makeMatchesTextSpecification(aReferenceText, aSourcingStrategy)
 		if (conditionProps is missing value) then error "Can't create MatchesTextSpecification with missing properties"
+
+		script MatchesTextSpecification
+			property parent : ddd's DefaultSpecification
+			property referenceText : aReferenceText
+			property sourcingStrategy : aSourcingStrategy
+			property name : "matches text (" & referenceText & ") from (" & (sourcingStrategy's name) & ")"
+				
+			on isSatisfiedBy(obj)
+				return sourcingStrategy's getValue(obj) contains referenceText
+			end isSatisfiedBy
+		end script
+		return MatchesTextSpecification
+	end makeMatchesTextSpecification
 		
-		copy MatchesTextSpecification to aCondition
-		set aCondition's referenceText to conditionProps's referenceText
-		set aCondition's sourcingStrategy to conditionProps's sourcingStrategy
-		set aCondition's name to "matches text (" & aCondition's referenceText & ") from (" & (aCondition's sourcingStrategy's name) & ")"
+	script BooleanValidationStrategy
+		on matchesValue(actual)
+		end matchesValue
+	end 
+	
+	on makeBooleanSpecification(aReferenceValue, aSourcingStrategy, aValidationStrategy)
+		if (aReferenceValue is missing value or aSourcingStrategy is missing value) then error "Can't create BooleanSpecification with missing properties"
+
+		script BooleanSpecification
+			property parent : ddd's DefaultSpecification
+			property referenceValue : aReferenceValue
+			property sourcingStrategy : aSourcingStrategy
+			property validationStrategy : aValidationStrategy
 			
-		return aCondition		
-	end make	
+			property name : "matches value (" & referenceValue & ") from (" & (sourcingStrategy's name) & ")"	
+				
+			on isSatisfiedBy(obj)
+				return validationStrategy's matchesText(sourcingStrategy's getValue(obj))
+			end isSatisfiedBy
+		end script
+		return BooleanSpecification
+	end makeBooleanSpecification
 	
-	on isSatisfiedBy(obj)
-		return sourcingStrategy's getValue(obj) contains referenceText
-	end isSatisfiedBy
-end script
+	on makeIsEqualSpecification(expected, booleanFetcher)
+		script 
+			property parent : BooleanValidationStrategy
+			on matchesValue(actual)
+				return expected equals actual
+			end matchesValue
+		end script
 
-script TrueSpecification
-	property parent : ddd's AbstractSpecification
-	property name : "true"
+		set validation to the result
+		set aSpec to makeBooleanSpecification(booleanFetcher, validation)
+		set aSpec's name to "same as " & expected
+		return aSpec
+	end makeIsEqualSpecification
 	
-	on isSatisfiedBy(obj)
-		return true
-	end isSatisfiedBy
-end script
+end script --Specification Factory
 
-script TextSpecificationBuilder
-	property textStrategy : missing value
+on makeBooleanSpecificationBuilder(aBooleanStrategy)
+	if (aBooleanStrategy is missing value) then error "Text strategy is missing."
+	
+	script BooleanSpecificationBuilder
+		property booleanStrategy : aBooleanStrategy
+		property theValue : missing value
+	
+		on isTrue()
+			set theValue to true
+			return me
+		end isTrue
 
-	property sameAsText : missing value
-	property notSameAsText : missing value
-	property startingWithText : missing value
-	property notStartingWithText : missing value
-	property endingWithText : missing value
-	property notEndingWithText : missing value
-	property containedText : missing value
-	property notContainedText : missing value
-	property pattern : missing value
-
-	on make new TextSpecificationBuilder with data aTextStrategy
-		copy TextSpecificationBuilder to aBuilder
-		set aBuilder's textStrategy to aTextStrategy
-		return aBuilder
-	end make
+		on isFalse()
+			set theValue to false
+			return me
+		end isFalse
 	
-	on sameAs(referenceText as text)
-		set sameAsText to referenceText
-		return me
-	end sameAs
-	
-	on notSameAs(referenceText as text)
-		set notSameAsText to referenceText
-		return me
-	end notSameAs
-	
-	on startsWith(referenceText as text)
-		set startingWithText to referenceText
-		return me
-	end startsWith
-	
-	on doesNotStartWith(referenceText as text)
-		set notStartingWithText to referenceText
-		return me
-	end doesNotStartWith
-
-	on endsWith(referenceText as text)
-		set endingWithText to referenceText
-		return me
-	end endsWith
-	
-	on doesNotEndWith(referenceText as text)
-		set notEndingWithText to referenceText
-		return me
-	end doesNotEndWith
-	
-	on doesContain(referenceText as text)
-		set containedText to referenceText
-		return me
-	end doesContain
-	
-	on doesNotContain(referenceText as text)
-		set notContainedText to referenceText		
-		return me
-	end doesNotContain
-	
-	on getContents()
-		if (textStrategy is missing value) then error "Text strategy is missing."
-		set aCondition to TrueSpecification
-		
-		if (sameAsText is not missing value) then set aCondition to aCondition's andSpec(TextSpecification's sameAsSpecification(sameAsText, textStrategy))
-		if (notSameAsText is not missing value) then set aCondition to aCondition's andSpec(TextSpecification's sameAsSpecification(notSameAsText, textStrategy)'s notSpec())
-		if (startingWithText is not missing value) then set aCondition to aCondition's andSpec(TextSpecification's startsWithSpecification(startingWithText, textStrategy))
-		if (notStartingWithText is not missing value) then set aCondition to aCondition's andSpec(TextSpecification's startsWithSpecification(notStartingWithText, textStrategy)'s notSpec())
-		if (endingWithText is not missing value) then set aCondition to aCondition's andSpec(TextSpecification's endsWithSpecification(endingWithText, textStrategy))
-		if (notEndingWithText is not missing value) then set aCondition to aCondition's andSpec(TextSpecification's endsWithSpecification(notEndingWithText, textStrategy)'s notSpec())
-		if (containedText is not missing value) then set aCondition to aCondition's andSpec(TextSpecification's containsSpecification(containedText, textStrategy))
-		if (notContainedText is not missing value) then set aCondition to aCondition's andSpec(TextSpecification's containsSpecification(notContainedText, textStrategy)'s notSpec())
-		
-		return aCondition
-	end getContents
-	
-	on reset()
-		set sameAsText to missing value
-		set notSameAsText to missing value
-		set startingWithText to missing value
-		set notSameAsText to missing value
-		set endingWithText to missing value
-		set notEndingWithText to missing value
-		set containedText to missing value
-		set notContainedText to missing value
-	end reset
-	
-end script
-
-script DateConditionBuilder
-	property dateStrategy : missing value
-
-	property sameAsDate : missing value
-	property notSameAsDate : missing value
-	property isBeforeDate : missing value
-	property isAfterDate : missing value
-	property inTheLastDays : missing value
-	property notInTheLastDays : missing value
-	property inTheNextDays : missing value
-	property notInTheNextDays : missing value
-	property isMissingValue : missing value
-
-	on make new DateConditionBuilder with data dateStrategy
-		copy DateConditionBuilder to aBuilder
-		set aBuilder's sameAsDate to missing value
-		set aBuilder's notSameAsDate to missing value
-		set aBuilder's isBeforeDate to missing value
-		set aBuilder's isAfterDate to missing value
-		set aBuilder's inTheLastDays to missing value
-		set aBuilder's notInTheLastDays to missing value
-		set aBuilder's inTheNextDays to missing value
-		set aBuilder's notInTheNextDays to missing value
-		set aBuilder's isMissingValue to missing value
-		
-		set aBuilder's dateStrategy to dateStrategy
-		return aBuilder
-	end make
-	
-	on sameAs(matchingDate as date)
-		set sameAsdate to matchingDate
-		return me
-	end sameAs
-	
-	on notSameAs(matchingDate as date)
-		set notSameAsDate to matchingDate
-		return me
-	end notSameAs
-	
-	on isBefore(matchingDate as date)
-		set isMissingValue to false
-		set isBeforeDate to matchingDate
-		return me
-	end isBefore
-	
-	on isAfter(matchingDate as date)
-		set isMissingValue to false
-		set isAfterDate to matchingDate
-		return me
-	end isAfter
-
-	on inTheLast(matchingDate as date)
-		set isMissingValue to false
-		set inTheLastDays to matchingDate
-		return me
-	end inTheLast
-	
-	on notInTheLast(matchingDate as date)
-		set isMissingValue to false
-		set notInTheLastDays to matchingDate
-		return me
-	end notInTheLast
-	
-	on inTheNext(matchingDate as date)
-		set isMissingValue to false
-		set inTheNextDays to matchingDate
-		return me
-	end inTheNext
-	
-	on notInTheNext(matchingDate as date)
-		set isMissingValue to false
-		set notInTheNextDays to matchingDate
-		return me
-	end notInTheNext
-	
-	on missing()
-		set isMissingValue to true
-		return me
-	end missing
-	
-	on notMissing()
-		set isMissingValue to false
-		return me
-	end notMissing
-	
-	on getContents()
-		set aCondition to TrueSpecification
-		
-		if (isMissingValue is not (missing value)) then 
-			if (isMissingValue) then 
-				set aCondition to aCondition's andSpec(DateSpecification's missingSpecification(dateStrategy))
+		on getContents()
+			local aCondition
+			if (theValue is not missing value) then 
+				set aCondition to SpecificationFactory's makeIsEqualSpecification(theValue, booleanStrategy)
 			else 
-				set aCondition to aCondition's andSpec(DateSpecification's missingSpecification(dateStrategy)'s notSpec())
+				error "theValue of BooleanSpecificationBuilder needs to be set."
 			end if 
-		end if 
-		
-		if (sameAsDate is not missing value) then set aCondition to aCondition's andSpec(DateSpecification's sameAsSpecification(sameAsDate, dateStrategy))
-		if (notSameAsDate is not missing value) then set aCondition to aCondition's andSpec(DateSpecification's sameAsSpecification(notSameAsDate, dateStrategy)'s notSpec())
-		if (isBeforeDate is not missing value) then set aCondition to aCondition's andSpec(DateSpecification's isBeforeSpecification(isBeforeDate, dateStrategy))
-		if (isAfterDate is not missing value) then set aCondition to aCondition's andSpec(DateSpecification's isAfterSpecification(isAfterDate, dateStrategy))
-		if (inTheLastDays is not missing value) then set aCondition to aCondition's andSpec(DateSpecification's inTheLastSpecification(inTheLastDays, dateStrategy))
-		if (notInTheLastDays is not missing value) then set aCondition to aCondition's andSpec(DateSpecification's inTheLastSpecification(notInTheLastDays, dateStrategy)'s notSpec())
-		if (inTheNextDays is not missing value) then set aCondition to aCondition's andSpec(DateSpecification's inTheNextSpecification(inTheNextDays, dateStrategy))
-		if (notInTheNextDays is not missing value) then set aCondition to aCondition's andSpec(DateSpecification's inTheNextSpecification(notInTheNextDays, dateStrategy)'s notSpec())
+			return aCondition
+		end getContents
+	
+	end script
+	return BooleanSpecificationBuilder
+end makeBooleanSpecificationBuilder
 
-		return aCondition
-	end getContents
+on makeTextMatchPatternConditionBuilder(aTextStrategy)
+	if (aTextStrategy is missing value) then error "Can't create a TextMatchPatternConditionBuilder without a text strategy."
 	
-end script
-
-script ContextConditionBuilder
---	property parent : TextSpecificationBuilder
-	property missingContext : missing value
-	property nameConditionBuilder : missing value
-
-
-	on contextName() 
-		tell TextSpecificationBuilder
-			set nameConditionBuilder to make new TextSpecificationBuilder with data ContextNameRetrievalStrategy
-		end tell
-		return nameConditionBuilder
-	end contextName
+	set builders_list to { }
+	set regex_text to ""
+	script TextMatchPatternConditionBuilder
+		property textStrategy : aTextStrategy
+		property builders : builders_list
+		property regex : regex_text
 	
-	on missing()
-		set missingContext to true
-		return me
-	end missing
-	
-	on notMissing()
-		set missingContext to false
-		return me
-	end notMissing
-	
-	on getContents()
-		set aCondition to TrueSpecification
+		on aLetter()
+			set regex to regex & "[[:alpha:]]{1}"
+			script 
+				on getContents()
+					script 
+						on isSatisfiedBy(obj as text)
+							return textutil's doesMatch(obj, "[[:alpha:]]{1}")
+						end isSatisfiedBy
+					end script
+				end getContents
+			end script
 		
-		if (nameConditionBuilder is not missing value) then set aCondition to aCondition's andSpec(nameConditionBuilder's getContents())
+			set end of builders to the result
 		
-		if (missingContext is not missing value) then 
-			
-			set aSpec to domain's TaskHasContextSpecification
-			
-			if (missingContext) then set aSpec to aSpec's notSpec()
-			
-			set aCondition to aCondition's andSpec(aSpec)
-		end if 
-		
-		return aCondition
-	end getContents
+			return me
+		end aLetter
 	
-end script
+		on aDigit()
+			set regex to regex & "[[:digit:]]{1}"
+			script 
+				on getContents()
+					script 
+						on isSatisfiedBy(obj as text)
+							return textutil's doesMatch(obj, "[[:digit:]]{1}")
+						end isSatisfiedBy
+					end script
+				end getContents
+			end script
+		
+			set end of builders to the result
+		
+			return me
+		end aDigit
+	
+		on letterOrDigit()
+			script 
+				on getContents()
+					script 
+						on isSatisfiedBy(obj as text)
+							return textutil's doesMatch(obj, "[[:alnum:]]{1}")
+						end isSatisfiedBy
+					end script
+				end getContents
+			end script
+		
+			set end of builders to the result
+		
+			return me
+		
+		end letterOrDigit
+	
+		on aSymbol()
+			return me
+		end aSymbol
+	
+		on customDate()
+		end customDate
+	
+		on aWord()
+			script 
+				on getContents()
+					script 
+						on isSatisfiedBy(obj as text)
+							return textutil's doesMatch(obj, "[[:word:]]{1}")
+						end isSatisfiedBy
+					end script
+				end getContents
+			end script
+		
+			set end of builders to the result
+		
+			return me
+		
+		end aWord
+	
+		on aNumber()
+			script 
+				on getContents()
+					script 
+						on isSatisfiedBy(obj as text)
+							return textutil's doesMatch(obj, "[[:xdigit:]]{1}")
+						end isSatisfiedBy
+					end script
+				end getContents
+			end script
+		
+			set end of builders to the result
+		
+			return me
+		
+		end aNumber
+	
+		on lettersAndDigits()
+		end lettersAndDigits
+	
+		on symbols()
+		end symbols
+	
+		on customText()
+		end customText
+	
+		on anyText()
+		end anyText
+	
+		on textString()
+		end textString
+	
+		on getContents()
+			set aSpec to ddd's DefaultSpecification
+		
+			repeat with aBuilder in builders
+				set aSpec to aSpec's andSpec(aBuilder's getContents())
+			end repeat
+		
+			script 
+				on isSatisfiedBy(obj as text)
+					return textutil's doesMatch(obj, regex)
+				end isSatisfiedBy
+			end script
+		
+			return the result
+		end getContents
+	end script --TextMatchPatternConditionBuilder	
+	return TextMatchPatternConditionBuilder
+end makeTextMatchPatternConditionBuilder
 
-script ConditionalCommandRule	
-	property parent : OmniFocusTaskProcessingRule
-	property conditions : { }
-	property actions : { }
+on makeCustomTokenBuilder()
+	script CustomTokenBuilder
+		property tokenName : missing value
 	
-	on constructRule()
-		set aRule to continue constructRule()
-		set aRule's conditions to { }
-		set aRule's actions to { }
-		return aRule
-	end constructRule
+		on token(tokenName)
+			set my tokenName to tokenName
+		end token
+
+		on aDay()
+		end aDay
 	
-	on match by aSpec
-		addCondition(aSpec)
-	end match
+		on aMonth()
+		end aMonth
 	
-	on addCondition(aSpec)
-		log "[" & prettyName() & "]" & "Adding condition: " & aSpec's name
-		set conditions's end to aSpec
-	end addCondition
+		on aYear()
+		end aYear
 	
-	on command thru aCommand
-		addAction(aCommand)
-	end command
+		on anHour()
+		end anHour
 	
-	on addAction(aCommand)
-		try
-			log "[" & prettyName() & "]" & "Adding action: " & aCommand's name
-			set actions's end to aCommand
-		on error errMsg
-			log "Error!" & errMsg
-		end try
-	end addAction
+		on aMinute()
+		end aMinute
 	
-	(*
-	@post Returns boolean or record
-	*)
-	on matchTask(aTask, inputAttributes)
-		--Implement all
-		set satisfiedConditions to 0
+		on aSecond()
+		end aSecond
+	
+		on anyText()
+		end anyText
+	
+		on textString()
+		end textString
+	end script
+	return CustomTokenBuilder
+end makeCustomTokenBuilder
+
+on makeTextSpecificationBuilder(aTextStrategy)
+	if (aTextStrategy is missing value) then error "Text strategy is missing."
+	
+	script TextSpecificationBuilder
+		property textStrategy : aTextStrategy
+
+		property sameAsText : missing value
+		property notSameAsText : missing value
+		property startingWithText : missing value
+		property notStartingWithText : missing value
+		property endingWithText : missing value
+		property notEndingWithText : missing value
+		property containedText : missing value
+		property notContainedText : missing value
+		property pattern : missing value
+
+		on sameAs(referenceText as text)
+			set sameAsText to referenceText
+			return me
+		end sameAs
+	
+		on notSameAs(referenceText as text)
+			set notSameAsText to referenceText
+			return me
+		end notSameAs
+	
+		on startsWith(referenceText as text)
+			set startingWithText to referenceText
+			return me
+		end startsWith
+	
+		on doesNotStartWith(referenceText as text)
+			set notStartingWithText to referenceText
+			return me
+		end doesNotStartWith
+
+		on endsWith(referenceText as text)
+			set endingWithText to referenceText
+			return me
+		end endsWith
+	
+		on doesNotEndWith(referenceText as text)
+			set notEndingWithText to referenceText
+			return me
+		end doesNotEndWith
+	
+		on doesContain(referenceText as text)
+			set containedText to referenceText
+			return me
+		end doesContain
+	
+		on doesNotContain(referenceText as text)
+			set notContainedText to referenceText		
+			return me
+		end doesNotContain
+	
+		on match()
+			set aBuilder to makeTextMatchPatternConditionBuilder(textStrategy)
+			return aBuilder
+		end match
+	
+		on getContents()
+			set aCondition to ddd's DefaultSpecification
 		
-		log "[" & prettyName() & "]" & "Preparing to evaluate " & count of conditions & " conditions."
-		repeat with condition in conditions
-			log "[" & prettyName() & "]" & "Evaluating condition: " & condition's name
-			set matchResult to condition's isSatisfiedBy(aTask)
-			
-			if (matchResult's class is boolean)
-				log "[" & prettyName() & "]" & "Task meets condition: " & matchResult
-			
-				if (matchResult) then set satisfiedConditions to satisfiedConditions + 1
-			else if (matchResult's class is record)
-				log "[" & prettyName() & "]" & "Task meets conditions: " & matchResult's passesCriteria
-				if (matchResult's passesCriteria) then
-					set satisfiedConditions to satisfiedConditions + 1					
-					set inputAttributes to inputAttributes & matchREsult's outputAttributes
+			if (sameAsText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeSameAsTextSpecification(sameAsText, textStrategy))
+			if (notSameAsText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeSameAsTextSpecification(notSameAsText, textStrategy)'s notSpec())
+			if (startingWithText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeStartsWithTextSpecification(startingWithText, textStrategy))
+			if (notStartingWithText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeStartsWithTextSpecification(notStartingWithText, textStrategy)'s notSpec())
+			if (endingWithText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeEndsWithTextSpecification(endingWithText, textStrategy))
+			if (notEndingWithText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeEndsWithTextSpecification(notEndingWithText, textStrategy)'s notSpec())
+			if (containedText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeContainsTextSpecification(containedText, textStrategy))
+			if (notContainedText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeContainsTextSpecification(notContainedText, textStrategy)'s notSpec())
+		
+			return aCondition
+		end getContents
+	
+		on reset()
+			set sameAsText to missing value
+			set notSameAsText to missing value
+			set startingWithText to missing value
+			set notSameAsText to missing value
+			set endingWithText to missing value
+			set notEndingWithText to missing value
+			set containedText to missing value
+			set notContainedText to missing value
+		end reset
+	
+	end script
+	return TextSpecificationBuilder
+	
+end makeTextSpecificationBuilder
+
+on makeDateConditionBuilder(aDateStrategy)
+
+	script DateConditionBuilder
+		property dateStrategy : aDateStrategy
+
+		property sameAsDate : missing value
+		property notSameAsDate : missing value
+		property isBeforeDate : missing value
+		property isAfterDate : missing value
+		property inTheLastDays : missing value
+		property notInTheLastDays : missing value
+		property inTheNextDays : missing value
+		property notInTheNextDays : missing value
+		property isMissingValue : missing value
+	
+		on sameAs(matchingDate as date)
+			set sameAsdate to matchingDate
+			return me
+		end sameAs
+	
+		on notSameAs(matchingDate as date)
+			set notSameAsDate to matchingDate
+			return me
+		end notSameAs
+	
+		on isBefore(matchingDate as date)
+			set isMissingValue to false
+			set isBeforeDate to matchingDate
+			return me
+		end isBefore
+	
+		on isAfter(matchingDate as date)
+			set isMissingValue to false
+			set isAfterDate to matchingDate
+			return me
+		end isAfter
+
+		on inTheLast(matchingDate as date)
+			set isMissingValue to false
+			set inTheLastDays to matchingDate
+			return me
+		end inTheLast
+	
+		on notInTheLast(matchingDate as date)
+			set isMissingValue to false
+			set notInTheLastDays to matchingDate
+			return me
+		end notInTheLast
+	
+		on inTheNext(matchingDate as date)
+			set isMissingValue to false
+			set inTheNextDays to matchingDate
+			return me
+		end inTheNext
+	
+		on notInTheNext(matchingDate as date)
+			set isMissingValue to false
+			set notInTheNextDays to matchingDate
+			return me
+		end notInTheNext
+	
+		on missing()
+			set isMissingValue to true
+			return me
+		end missing
+	
+		on notMissing()
+			set isMissingValue to false
+			return me
+		end notMissing
+	
+		on getContents()
+			set aCondition to ddd's DefaultSpecification
+		
+			if (isMissingValue is not (missing value)) then 
+				if (isMissingValue) then 
+					set aCondition to aCondition's andSpec(SpecificationFactory's makeMissingDateSpecification(dateStrategy))
+				else 
+					set aCondition to aCondition's andSpec(SpecificationFactory's makeMissingDateSpecification(dateStrategy)'s notSpec())
 				end if 
-			end 
-		end repeat
+			end if 
 		
-		set matched to (satisfiedConditions equals count of conditions)
-		log "[" & prettyName() & "]" & "Finished evaluating conditions for rule. Result: " & matched
-		return matched
-	end matchTask
+			if (sameAsDate is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeSameAsDateSpecification(sameAsDate, dateStrategy))
+			if (notSameAsDate is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeSameAsDateSpecification(notSameAsDate, dateStrategy)'s notSpec())
+			if (isBeforeDate is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeIsBeforeDateSpecification(isBeforeDate, dateStrategy))
+			if (isAfterDate is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeIsAfterDateSpecification(isAfterDate, dateStrategy))
+			if (inTheLastDays is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeInTheLastIntervalDateSpecification(inTheLastDays, dateStrategy))
+			if (notInTheLastDays is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeInTheLastIntervalDateSpecification(notInTheLastDays, dateStrategy)'s notSpec())
+			if (inTheNextDays is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeInTheNextIntervalDateSpecification(inTheNextDays, dateStrategy))
+			if (notInTheNextDays is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeInTheNextIntervalDateSpecification(notInTheNextDays, dateStrategy)'s notSpec())
+
+			return aCondition
+		end getContents
 	
-	(*
-	@post Throws error if there's a problem processing rule.
-	*)
-	on processTask(aTask, inputAttributes)
-		log "[" & prettyName() & "]" & "Preparing to execute " & count of actions & " commands on task."
-		repeat with anAction in actions
-			log "[" & prettyName() & "]" & "Executing command: " & anAction's name
-			tell anAction to execute(aTask)
-		end repeat
-		log "[" & prettyName() & "]" & "Finished executing commands on task."
-		return true
-	end processTask
-end script
+	end script
+	return DateConditionBuilder
+end makeDateConditionBuilder
 
-script SetTaskNameCommand
-	property parent : domain's TaskCommand
-	property newTaskName : missing value
+on makeContextConditionBuilder()
 
-	on execute(aTask)
-		tell aTask to setName(newTaskName)
-	end execute
-end script 
+	script ContextConditionBuilder
+		property missingContext : missing value
+		property nameConditionBuilder : missing value
 
-script StripTokenFromTaskNameCommand
-	property parent : domain's TaskCommand
-	property token : missing value
+
+		on contextName() 
+			set nameConditionBuilder to makeTextSpecificationBuilder(ContextNameRetrievalStrategy)
+			return nameConditionBuilder
+		end contextName
 	
-	on execute(aTask)
-		local taskName
-		
-		set taskName to aTask's getName()
-		
-		using terms from script "com.kraigparkinson/ASText"
-			set originalTaskNameStr to textutil's StringObj's makeString(taskName)
-			set revisedTaskNameStr to originalTaskNameStr's removeText(token)
-			set revisedTaskName to revisedTaskNameStr's asText()
-		end using terms from
-
-		tell aTask to setName(revisedTaskName)
-	end execute
-		
-end script
-
-script ReplaceTokenFromTaskNameCommand
-	property parent : domain's TaskCommand
-	property findToken : missing value
-	property replaceToken : missing value
+		on missing()
+			set missingContext to true
+			return me
+		end missing
 	
-	on execute(aTask)
-		local taskName
-		
-		set taskName to aTask's getName()
-		
-		local revisedTaskName
-		set revisedTaskName to textutil's StringObj's makeString(taskName)'s replaceText(findToken, replaceToken)'s asText()
-
-		tell aTask to setName(revisedTaskName)
-	end execute
-end script
-
-script AppendTextToTaskNameCommand
-	property parent : domain's TaskCommand
-	property textToAppend : missing value
+		on notMissing()
+			set missingContext to false
+			return me
+		end notMissing
 	
-	on execute(aTask)
-		local taskName
-
-		set taskName to aTask's getName()
+		on getContents()
+			set aCondition to ddd's DefaultSpecification
 		
-		set revisedTaskName to taskName & textToAppend
-		tell aTask to setName(revisedTaskName)
-	end execute
-end script
-
-script PrependTextToTaskNameCommand
-	property parent : domain's TaskCommand
-	property textToPrepend : missing value
+			if (nameConditionBuilder is not missing value) then set aCondition to aCondition's andSpec(nameConditionBuilder's getContents())
+		
+			if (missingContext is not missing value) then 
+			
+				set aSpec to domain's TaskHasContextSpecification
+			
+				if (missingContext) then set aSpec to aSpec's notSpec()
+			
+				set aCondition to aCondition's andSpec(aSpec)
+			end if 
+		
+			return aCondition
+		end getContents
 	
-	on execute(aTask)
-		local taskName
+	end script
+	return ContextConditionBuilder
+end makeContextConditionBuilder
 
-		set taskName to aTask's getName()
+
+
+
+script CommandFactory
+	on makeSetTaskNameCommand(aTaskName)
+		script SetTaskNameCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property newTaskName : aTaskName
+
+			on execute(aTask)
+				tell aTask to setName(newTaskName)
+			end execute
+		end script 
+		return SetTaskNameCommand
+	end makeSetTaskNameCommand
+	
+	on makeStripTokenFromTaskNameCommand(aToken)
+		script StripTokenFromTaskNameCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property token : aToken
+	
+			on execute(aTask)
+				local taskName
 		
-		set revisedTaskName to textToPrepend & taskName
-		tell aTask to setName(revisedTaskName)
-	end execute
-end script
+				set taskName to aTask's getName()
+		
+				using terms from script "com.kraigparkinson/ASText"
+					set originalTaskNameStr to textutil's makeStringObj(taskName)
+					set revisedTaskNameStr to originalTaskNameStr's removeText(token)
+					set revisedTaskName to revisedTaskNameStr's asText()
+				end using terms from
+
+				tell aTask to setName(revisedTaskName)
+			end execute
+		end script
+	end makeStripTokenFromTaskNameCommand
+	
+	on makePrependTextToTaskNameCommand(aTextToPrepend)
+		script PrependTextToTaskNameCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property textToPrepend : aTextToPrepend
+	
+			on execute(aTask)
+				local taskName
+
+				set taskName to aTask's getName()
+		
+				set revisedTaskName to textToPrepend & taskName
+				tell aTask to setName(revisedTaskName)
+			end execute
+		end script
+		return PrependTextToTaskNameCommand
+	end makePrependTextToTaskNameCommand
+	
+	on makeReplaceTokenFromTaskNameCommand(aFindToken, aReplaceToken)
+		script ReplaceTokenFromTaskNameCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property findToken : aFindToken
+			property replaceToken : aReplaceToken
+	
+			on execute(aTask)
+				local taskName
+		
+				set taskName to aTask's getName()
+		
+				local revisedTaskName
+				set revisedTaskName to textutil's makeStringObj(taskName)'s replaceText(findToken, replaceToken)'s asText()
+
+				tell aTask to setName(revisedTaskName)
+			end execute
+		end script
+		return ReplaceTokenFromTaskNameCommand
+	end makeReplaceTokenFromTaskNameCommand
+	
+	on makeAppendTextToTaskNameCommand(aTextToAppend)
+		script AppendTextToTaskNameCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property textToAppend : aTextToAppend
+	
+			on execute(aTask)
+				local taskName
+
+				set taskName to aTask's getName()
+		
+				set revisedTaskName to taskName & textToAppend
+				tell aTask to setName(revisedTaskName)
+			end execute
+		end script
+	end makeAppendTextToTaskNameCommand
+	
+end script --CommandFactory
+
+
+
+
+
 
 script HasChildrenSpecification
-	property parent : ddd's AbstractSpecification
+	property parent : ddd's DefaultSpecification
 	property name : "Has Child Tasks"
 	
 	on isSatisfiedBy(aTask)
@@ -924,430 +1200,393 @@ script HasChildrenSpecification
 	end isSatisfiedBy
 end script
 
-script TaskNameCommandBuilder
-	property newTextValue : missing value
-	property textToPrepend : missing value
-	property textToAppend : missing value
-	property textToFind : missing value
-	property textToReplace : missing value
+on makeTaskNameCommandBuilder()
+	script TaskNameCommandBuilder
+		property newTextValue : missing value
+		property textToPrepend : missing value
+		property textToAppend : missing value
+		property textToFind : missing value
+		property textToReplace : missing value
 	
-	on createBuilder()
-		copy TaskNameCommandBuilder to aBuilder
-		return aBuilder
-	end createBuilder
+		on rename(newText)
+			set newTextValue to newText
+			return me
+		end rename
+	
+		on prepend(theText)
+			set textToPrepend to theText
+			return me
+		end prepend
+	
+		on append(theText)
+			set textToAppend to theText
+			return me
+		end append
+	
+		on replace(original, replacement)
+			set textToFind to original
+			set textToReplace to replacement
+			return me
+		end replace
 
-	on rename(newText)
-		set newTextValue to newText
-		return me
-	end rename
+		on remove(original)
+			return replace(original, "")
+		end remove
 	
-	on prepend(theText)
-		set textToPrepend to theText
-		return me
-	end prepend
-	
-	on append(theText)
-		set textToAppend to theText
-		return me
-	end append
-	
-	on replace(original, replacement)
-		set textToFind to original
-		set textToReplace to replacement
-		return me
-	end replace
-	
-	on getContents()
-		set aCommand to domain's MacroTaskCommand's constructCommand()
+		on getContents()
+			set commandList to { }
 		
-		if newTextValue is not missing value then 
-			set newCommand to SetTaskNameCommand's constructCommand()
-			set newCommand's newTaskNAme to newTextValue
-			set end of aCommand's commands to newCommand
-		end if 
+			if newTextValue is not missing value then 
+				set end of commandList to CommandFactory's makeSetTaskNameCommand(newTextValue)
+			end if 
 
-		if textToPrepend is not missing value then 
-			set newCommand to PrependTextToTaskNameCommand's constructCommand()
-			set newCommand's textToPrepend to textToPrepend
-			set end of aCommand's commands to newCommand
-		end if		
+			if textToPrepend is not missing value then 
+				set end of commandList to CommandFactory's makePrependTextToTaskNameCommand(textToPrepend)
+			end if		
 		
-		if textToAppend is not missing value then 
-			set newCommand to AppendTextToTaskNameCommand's constructCommand()
-			set newCommand's textToAppend to textToAppend
-			set end of aCommand's commands to newCommand
-		end if		
+			if textToAppend is not missing value then 
+				set end of commandList to CommandFactory's makeAppendTextToTaskNameCommand(textToAppend)
+			end if		
 
-		if (textToFind is not missing value and textToReplace is not missing value) then 
-			set newCommand to ReplaceTokenFromTaskNameCommand's constructCommand()
-			set newCommand's findToken to textToFind
-			set newCommand's replaceToken to textToReplace
-			set end of aCommand's commands to newCommand
-		end if		
+			if (textToFind is not missing value and textToReplace is not missing value) then 
+				set end of commandList to CommandFactory's makeReplaceTokenFromTaskNameCommand(textToFind, textToReplace)
+			end if		
+			
+			set aCommand to domain's CommandFactory's makeMacroTaskCommand(commandList)
 
-		return aCommand
-	end getContents
-end script
+			return aCommand
+		end getContents
+	end script
+	return TaskNameCommandBuilder
+end makeTaskNameCommandBuilder
 
-script RepetitionRuleCommandBuilder
-	property frequency : missing value
-	property repetitionRule : missing value
+on makeRepetitionRuleCommandBuilder()
+	script RepetitionRuleCommandBuilder
+		property frequency : missing value
+		property repetitionRule : missing value
 	
-	on createBuilder()
-		copy RepetitionRuleCommandBuilder to aBuilder
-		return aBuilder
-	end createBuilder
+		on deferAnother(freq)
+			set frequency to freq
+			set repetitionRule to "defer"
+			return me
+		end deferAnother
 
-	on deferAnother(freq)
-		set frequency to freq
-		set repetitionRule to "defer"
-		return me
-	end deferAnother
+		on dueAgain(freq)
+			set frequency to freq
+			set repetitionRule to "due"
+			return me
+		end due
 
-	on dueAgain(freq)
-		set frequency to freq
-		set repetitionRule to "due"
-		return me
-	end due
-
-	on repeatEvery(freq)
-		set frequency to freq
-		set repetitionRule to "fixed"
-		return me
-	end due
+		on repeatEvery(freq)
+			set frequency to freq
+			set repetitionRule to "fixed"
+			return me
+		end due
 		
-	on getContents()
-		local aCommand
+		on getContents()
+			local aCommand
 		
-		if (repetitionRule is "defer") then
-			set aCommand to domain's DeferAnotherCommand's constructCommand()
-		else if (repetitionRule is "due") then
-			set aCommand to domain's DueAgainCommand's constructCommand()
-		else if (repetitionRule is "fixed") then
-			set aCommand to domain's RepeatEveryCommand's constructCommand()
-		end
+			if (repetitionRule is "defer") then
+				set aCommand to domain's CommandFactory's makeDeferAnotherCommand(frequency)
+			else if (repetitionRule is "due") then
+				set aCommand to domain's CommandFactory's makeDueAgainCommand(frequency)
+			else if (repetitionRule is "fixed") then
+				set aCommand to domain's CommandFactory's makeRepeatEveryCommand(frequency)
+			end
 
-		set aCommand's frequency to frequency
-				
-		return aCommand
-	end getContents
-end script
+			return aCommand
+		end getContents
+	end script
+	return RepetitionRuleCommandBuilder
+end makeRepetitionRuleCommandBuilder
 
 script RuleConditionBuilder
 end script
 
-script RuleCommandBuilder
-	property nameCommandBuilder : missing value
-	property repetitionBuilder : missing value
+on makeRuleCommandBuilder()
+	script RuleCommandBuilder
+		property nameCommandBuilders : { }
+		property repetitionBuilder : missing value
 
-	on make new RuleCommandBuilder
-		copy RuleCommandBuilder to aBuilder
-		return aBuilder
-	end make
-
-	on taskName()
-		tell TaskNameCommandBuilder 
-			set nameCommandBuilder to TaskNameCommandBuilder's createBuilder()
-		end tell 
+		on taskName()
+			set end of nameCommandBuilders to makeTaskNameCommandBuilder()
+			return last item of nameCommandBuilders
+		end taskName
+	
+		on repetition()
+			set repetitionBuilder to makeRepetitionRuleCommandBuilder()
+			return repetitionBuilder
+		end repetition
 		
-		return nameCommandBuilder
-	end taskName
-	
-	on repetition()
-		tell RepetitionRuleCommandBuilder
-			set repetitionBuilder to RepetitionRuleCommandBuilder's createBuilder()
-		end tell
-		return repetitionBuilder
-	end repetition
-		
-	on getContents()
-		set aCommand to domain's MacroTaskCommand's constructCommand()
-		
-		set aCommand to nameCommandBuilder's getContents()
-		 
-		return aCommand
-	end getContents
-end script
-
-script RuleBase
-	property parent : ConditionalCommandRule
-	
-	property nameConditionBuilder : missing value
-	property projectCondBuilder : missing value
-	property contextCondBuilder : missing value
-	property deferDateConditionBuilder : missing value
-	property dueDateConditionBuilder : missing value
-	property commandBuilder : missing value
-	
-	on any()
-	end any
-	
-	on all()
-	end all
-	
-	on do()
-		tell RuleCommandBuilder
-			set commandBuilder to make new RuleCommandBuilder
-		end tell
-		return commandBuilder
-	end command
-	
-	on taskName()
-		tell TextSpecificationBuilder 
-			set nameConditionBuilder to make new TextSpecificationBuilder with data TaskNameRetrievalStrategy
-		end tell
-		return nameConditionBuilder	
-	end taskName
-	
-	on project()
-	end project
-	
-	on context()
-		tell ContextConditionBuilder
-			copy ContextConditionBuilder to contextCondBuilder
-		end tell
-		
-		return contextCondBuilder
-	end context
-	
-	on dueDate()
-		tell DateConditionBuilder
-			set dueDateConditionBuilder to make new DateConditionBuilder with data DueDateRetrievalStrategy
-		end tell
-		return dueDateConditionBuilder
-	end dueDate
-	
-	on deferDate()
-		tell DateConditionBuilder
-			set deferDateConditionBuilder to make new DateConditionBuilder with data DeferDateRetrievalStrategy
-		end tell
-		return deferDateConditionBuilder
-	end deferDate
-	
-	on flagged()
-	end flagged
-	
-	on notFlagged()
-	end notFlagged
-	
-	on noteValue()
-	end noteValue
-	
-	on setContext(contextName)
-		set aCommand to domain's SetContextCommand's constructCommand()
-		set aCommand's contextName to contextName
-		return aCommand
-	end setContext
-	
-	on rename(newName)
-		script 
-			on execute(aTask)
-				aTask's setName(newName)
-			end execute
-		end script
-		return the result
-	end rename
-	
-	on markCompleted()
-		return domain's MarkCompleteCommand's constructCommand()
-	end markCompleted
-	
-	on getContents()
-		set aSpec to TrueSpecification
-		
-		if (taskNameConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(taskNameConditionBuilder's getContents())
-		if (contextConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(contextConditionBuilder's getContents())
-		if (deferDateConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(deferDateConditionBuilder's getContents())
-		if (dueDateConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(dueDateConditionBuilder's getContents())
-		
-		return aSpec
-	end getContents
-end script
-
-on makeRule(aRule)
---	set suite to aRule's parent
-	
---	tell aRuleSet to addRule(aRule)
-	
-	script _Rule
-		property parent : ConditionalCommandRule's constructRule()
-		property matchResult : false
-		
-	end script
-	
-	return _Rule
-end makeRule
-
-on Rule(aRule)
-	return makeRule(aRule)
-end Rule
-
-
-script OmniFocusRuleTarget
-	property tasks : { }
-	property targetName : missing value
-	
-	on construct()
-		copy me to aTarget
-		set aTarget's tasks to getTasks() 
-		set aTarget's targetName to defineName()
-		return aTarget
-	end construct
-	
-	on getTasks()
-		--return tasks
-	end getTasks
-	
-	on defineName()
-		error "Name of target must be defined."
-	end defineName
-
-	on accept(rules)
-		log "Attempting to process " & count of rules & " rules for target, " & targetName & "."
-		
-		repeat with aRule in rules
-			log "[OmniFocus rule target: " & targetName & "][" & aRule's prettyName() & "] Attempting to process " & count of tasks & " tasks."
+		on getContents()
+			set commandList to { }
 			
-			if (count of tasks > 100) then
-				--Try in 100 task increments
-				
-				set remainingUnprocessedTasks to count of tasks
-				
-				set batchStartIdx to 1
-				set batchEndIdx to 100
-				
-				repeat until (remainingUnprocessedTasks = 0) 
-					set taskBatch to items batchStartIdx thru batchEndIdx of tasks
+			repeat with aBuilder in nameCommandBuilders
+				set end of commandList to aBuilder's getContents()
+			end repeat
+			if repetitionBuilder is not missing value then set end of commandList to repetitionBuilder's getContents()
+		 
+			set aCommand to domain's CommandFactory's makeMacroTaskCommand(commandList)
 
-					log "[OmniFocus rule target: " & targetName & "][" & aRule's prettyName() & "] Processing batch " & batchStartIdx & " to " & batchEndIdx & " of " & count of tasks & " tasks." 
-					tell aRule to accept(taskBatch)
-					
-					set remainingUnprocessedTasks to remainingUnprocessedTasks - (count of taskBatch)
-					set batchStartIdx to batchEndIdx + 1
-					if (remainingUnprocessedTasks > 100)
-						set batchEndIdx to batchEndIdx + 100
-					else 
-						set batchEndIdx to batchStartIdx + remainingUnprocessedTasks - 1
-					end
-				end repeat
-			else
-				
-				tell aRule to accept(reference to tasks)
-			end if
-			log "[OmniFocus rule target: " & targetName & "][" & aRule's prettyName() & "] Finished processing " & count of tasks & " tasks."
-		end repeat
+			return aCommand
+		end getContents
+	end script
+	return RuleCommandBuilder
+end makeRuleCommandBuilder
+
+
+on makeRuleBase()
+	script RuleBase
+		property parent : RuleFactory's makeConditionalCommandRule()
+	
+		property nameConditionBuilder : missing value
+		property projectCondBuilder : missing value
+		property contextCondBuilder : missing value
+		property deferDateConditionBuilder : missing value
+		property dueDateConditionBuilder : missing value
+		property commandBuilder : missing value
+		property completeConditionBuilder : missing value
+		property flagConditionBuilder : missing value
+	
+		on any()
+		end any
+	
+		on all()
+		end all
+	
+		on do()
+			set commandBuilder to makeRuleCommandBuilder()
+			return commandBuilder
+		end command
+	
+		on taskName()
+			set nameConditionBuilder to makeTextSpecificationBuilder(TaskNameRetrievalStrategy)
+			return nameConditionBuilder	
+		end taskName
+	
+		on project()
+		end project
+	
+		on context()
+			set contextCondBuilder to makeContextConditionBuilder()		
+			return contextCondBuilder
+		end context
+	
+		on dueDate()
+			set dueDateConditionBuilder to makeDateConditionBuilder(DueDateRetrievalStrategy)
+			return dueDateConditionBuilder
+		end dueDate
+	
+		on deferDate()
+			set deferDateConditionBuilder to makeDateConditionBuilder(DeferDateRetrievalStrategy)
+			return deferDateConditionBuilder
+		end deferDate
+	
+		on flagged()
+			set flagConditionBuilder to makeBooleanSpecificationBuilder(FlagRetrievalStrategy)
+			return flagConditionBuilder	
+		end flagged
+	
+		on noteValue()
+			set noteConditionBuilder to makeTextSpecificationBuilder(NoteRetrievalStrategy)
+			return noteConditionBuilder	
+		end noteValue
+	
+		on complete()
+			set completeConditionBuilder to makeBooleanSpecificationBuilder(CompletedRetrievalStrategy)
+			return completeConditionBuilder	
+		end complete
+	
+		on setContext(contextName)
+			set aCommand to domain's CommandFactory's makeSetContextCommand(contextName)
+			return aCommand
+		end setContext
+	
+		on rename(newName)
+			script 
+				on execute(aTask)
+					aTask's setName(newName)
+				end execute
+			end script
+			return the result
+		end rename
+	
+		on markCompleted()
+			return domain's CommandFactory's makeMarkCompleteCommand()
+		end markCompleted
 		
-		log "Finished processing " & count of rules & " rules for target, " & targetName & "."		
-	end accept
-end script
+		on getContents()
+			set aSpec to ddd's DefaultSpecification
+		
+			if (taskNameConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(taskNameConditionBuilder's getContents())
+			if (contextConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(contextConditionBuilder's getContents())
+			if (deferDateConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(deferDateConditionBuilder's getContents())
+			if (dueDateConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(dueDateConditionBuilder's getContents())
+		
+			return aSpec
+		end getContents
+	end script
+	return RuleBase
+end makeRuleBase
+
+on makeOmniFocusRuleTarget()
+	script OmniFocusRuleTarget
+		property tasks : { }
+		property targetName : missing value
+	
+		on locateTasks()
+			return tasks
+		end locateTasks
+	
+		on defineName()
+			error "Name of target must be defined."
+		end defineName
+
+		on accept(rules)
+			set tasks to locateTasks()
+			set targetName to defineName()
+			
+			overb("Attempting to process " & count of rules & " rules for target, " & targetName & ".")
+		
+			repeat with aRule in rules
+				overb("[OmniFocus rule target: " & targetName & "][" & aRule's name & "] Attempting to process " & count of tasks & " tasks.")
+			
+				if (count of tasks > 100) then
+					--Try in 100 task increments
+				
+					set remainingUnprocessedTasks to count of tasks
+				
+					set batchStartIdx to 1
+					set batchEndIdx to 100
+				
+					repeat until (remainingUnprocessedTasks = 0) 
+						set taskBatch to items batchStartIdx thru batchEndIdx of tasks
+
+						overb("[OmniFocus rule target: " & targetName & "][" & aRule's name & "] Processing batch " & batchStartIdx & " to " & batchEndIdx & " of " & count of tasks & " tasks.")
+						tell aRule to accept(taskBatch)
+					
+						set remainingUnprocessedTasks to remainingUnprocessedTasks - (count of taskBatch)
+						set batchStartIdx to batchEndIdx + 1
+						if (remainingUnprocessedTasks > 100)
+							set batchEndIdx to batchEndIdx + 100
+						else 
+							set batchEndIdx to batchStartIdx + remainingUnprocessedTasks - 1
+						end
+					end repeat
+				else
+				
+					tell aRule to accept(reference to tasks)
+				end if
+				overb("[OmniFocus rule target: " & targetName & "][" & aRule's name & "] Finished processing " & count of tasks & " tasks.")
+			end repeat
+		
+			overb("Finished processing " & count of rules & " rules for target, " & targetName & ".")
+		end accept
+	end script
+	return OmniFocusRuleTarget
+end makeOmniFocusRuleTarget
 
 -- TARGETS --
 
 script Inbox
-	property parent : OmniFocusRuleTarget
+	property parent : makeOmniFocusRuleTarget()
 	
 	on defineName()
 		return "Inbox"
 	end defineName
 	
-	on getTasks()
+	on locateTasks()
 		return domain's taskRepositoryInstance()'s selectAllInboxTasks()
 --		return taskRepositoryInstance()'s selectAllInboxTasks()
-	end getTasks
+	end locateTasks
 end script
 
 script DocumentTarget
-	property parent : OmniFocusRuleTarget
+	property parent : makeOmniFocusRuleTarget()
 	
 	on defineName()
 		return "All Tasks"
 	end defineName
 	
-	on getTasks()
+	on locateTasks()
 		return domain's taskRepositoryInstance()'s selectAll()
 --		return taskRepositoryInstance()'s selectAll()
-	end getTasks
-end script
-
-script ProjectTarget
-	property parent : OmniFocusRuleTarget
-	property projectName : missing value
-
-	on defineName()
-		return "Project: " & projectName
-	end defineName
-
-	on getTasks()
-		set aProject to domain's ProjectRepository's findByName(projectName)
-		set theTasks to domain's taskRepositoryInstance()'s selectTasksFromProject(aProject)
-		
-		return theTasks
-	end getTasks
+	end locateTasks
 end script
 
 on target()
 	script
-		on project(projectName)
-			copy ProjectTarget to aTarget
-			set aTarget's projectName to projectName
-			return aTarget
+		on project(pName)
+			script ProjectTarget
+				property parent : makeOmniFocusRuleTarget()
+				property name : "Project:" & space & ">>" & pName & "<<"
+
+				on defineName()
+					return name
+				end defineName
+
+				on locateTasks()
+					set aProject to domain's ProjectRepository's findByName(pName)
+					set theTasks to domain's taskRepositoryInstance()'s selectTasksFromProject(aProject)
+		
+					return theTasks
+				end locateTasks
+			end script			
+			
+			set ProjectTarget's projectName to projectName
+			return ProjectTarget
 		end 
 	end script
 	
 	return the result
 end target
 
-
-
 script UserSpecifiedTasks
-	property parent : OmniFocusRuleTarget
+	property parent : makeOmniFocusRuleTarget()
 	
 	on defineName()
 		return "User-Specified Tasks"
 	end defineName
 	
-	on getTasks()
+	on locateTasks()
 		return domain's taskRepositoryInstance()'s selectUserSpecifiedTasks()
-	end getTasks
+	end locateTasks
 end script
 
-script OmniFocusRuleSet
-	
-	on constructRuleSet()
-		copy me to aRuleSet
-		return aRuleSet
-	end constructRuleSet
-	
+script OmniFocusRuleSet	
 	on processAll()
 	end processAll
-	
 end script
 
-script AbstractOmniFocusRuleSet
-	property parent : OmniFocusRuleSet
-	property targetConfigs : { }
+on makeOmniFocusRuleSet()
+	script DefaultOmniFocusRuleSet
+		property parent : OmniFocusRuleSet
+		property targetConfigs : { }
 	
-	on addTargetConfig(aTarget, rules)
-		set targetConfigs's end to { target:aTarget, rules:rules }
-	end addTargetConfig
+		on addTargetConfig(aTarget, rules)
+			set targetConfigs's end to { target:aTarget, rules:rules }
+		end addTargetConfig
 
-	on processAll()
-		repeat with configItem in targetConfigs
-			set aTarget to configItem's target
-			set rules to configItem's rules
+		on processAll()
+			repeat with configItem in targetConfigs
+				set aTarget to configItem's target
+				set rules to configItem's rules
 			
-			tell aTarget to accept(rules)			
-		end repeat
-	end processAll	
-end script 
+				tell aTarget to accept(rules)			
+			end repeat
+		end processAll	
+	end script 
+	return DefaultOmniFocusRuleSet
+end makeOmniFocusRuleSet
+
 
 on registerRuleRepository(repo)
-	log "Registering rule repository, " & repo's name
+	odebug("Registering rule repository, " & repo's name)
 	set _ruleRepository to repo
 end registerRuleRepository
 
 on initializeRuleRepository()
-	log "Initializing rule repository."
+	odebug("Initializing rule repository.")
 
 	--Set up container	
 	set pathToRules to POSIX path of ((path to home folder from user domain) as text)
@@ -1356,8 +1595,11 @@ on initializeRuleRepository()
 
 	script FileLoadingRuleRepository
 		property name : "FileLoadingRuleRepository"
+		
+		
+		
 		on getAll()
-			set suite to makeRuleLoader()'s loadRulesFromFile(pathToRules)
+			set suite to _makeRuleLoader()'s loadRulesFromFile(pathToRules)
 			return suite
 		end getAll
 	end script
@@ -1367,23 +1609,23 @@ end initializeRuleRepository
 
 on locateRuleRepository()
 	if _ruleRepository is missing value
-		log "Rule repository has not yet been registered."
+		owarn("Rule repository has not yet been registered.")
 		initializeRuleRepository()
 	end if
 
-	log "Located rule repository, " & _ruleRepository's name
+	odebug("Located rule repository, " & _ruleRepository's name)
 	return _ruleRepository
 end locateRuleRepository
 
 script RuleProcessingService
 	on processInbox()
-		log "Process Inbox called."
+		odebug("RuleProcessingService: Process Inbox called.")
 
 		set ruleRepository to locateRuleRepository()
 		set suite to ruleRepository's getAll()
 		tell suite to exec()
 	
-		log "Process Inbox completed."	
+		odebug("RuleProcessingService: Process Inbox completed.")
 	end processInbox
 
 	on processAllRules()

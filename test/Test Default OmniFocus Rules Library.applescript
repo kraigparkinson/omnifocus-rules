@@ -8,7 +8,7 @@ use Applescript version "2.4"
 use scripting additions
 
 use domain : script "com.kraigparkinson/OmniFocusDomain"
-use cfr : script "com.kraigparkinson/Default OmniFocus Rules Library"
+use hoblib : script "com.kraigparkinson/Default OmniFocus Rules Library"
 
 property parent : script "com.lifepillar/ASUnit"
 property suite : makeTestSuite("Default OmniFocus Rules Library")
@@ -96,7 +96,7 @@ script |Add OmniOutliner Template as Children|
 		assertNotMissing(aFile, "Should have loaded the file.")
 	end script
 end script
-
+(*
 script |Tidy Incomplete Consideration Tasks Rule| 
 	property parent : TestSet(me)
 	
@@ -142,7 +142,7 @@ script |Tidy Incomplete Consideration Tasks Rule|
 			set aTask's original's context to aContext
 		end tell
 		
-		set aRule to cfr's TidyConsiderationsRule's constructRule()
+		set aRule to hoblib's TidyConsiderationsRule
 		tell aRule to run
 		
 		set matchingResult to aRule's matchTask(aTask, { })
@@ -155,7 +155,7 @@ script |Tidy Incomplete Consideration Tasks Rule|
 		
 		set aTask to createInboxTask("Consider foo")
 		
-		set aRule to cfr's TidyConsiderationsRule's constructRule()
+		set aRule to hoblib's TidyConsiderationsRule
 		tell aRule to run
 				
 		set matchingResult to aRule's matchTask(aTask, { })
@@ -169,7 +169,7 @@ script |Tidy Incomplete Consideration Tasks Rule|
 		set aTask to createInboxTask("Consider foo")
 		set aContext to domain's ContextRepository's findByName("Considerations")
 		
-		set aRule to cfr's TidyConsiderationsRule's constructRule()
+		set aRule to hoblib's TidyConsiderationsRule
 		tell aRule to run
 				
 		tell aRule to processTask(aTask, { })
@@ -184,16 +184,20 @@ script |Tidy Incomplete Consideration Tasks Rule|
 	end script
 
 end script
-
+*)
 script |Add Daily Repeat Rule| 
 	property parent : TestSet(me)
 	
 	property taskFixtures : { }
 	property contextFixtures : { }
+	property ruleFixture : hoblib's AddDailyRepeatRule
 	
 	on setUp()
 		set taskFixtures to { }
 		set contextFixtures to { }
+
+		set ruleFixture's conditions to { }
+		set ruleFixture's actions to { }
 	end setUp
 	
 	on tearDown()
@@ -225,10 +229,9 @@ script |Add Daily Repeat Rule|
 		
 		set aTask to createInboxTask("Consider (Add daily repeat)")
 				
-		set aRule to cfr's AddDailyRepeatRule's constructRule()
-		tell aRule to run
+		tell ruleFixture to run
 		
-		set matchingResult to aRule's matchTask(aTask, { })
+		set matchingResult to ruleFixture's matchTask(aTask, { })
 		
 		assert(matchingResult, "Should have matched.")
 	end script
@@ -238,10 +241,9 @@ script |Add Daily Repeat Rule|
 		
 		set aTask to createInboxTask("Consider foo")
 		
-		set aRule to cfr's AddDailyRepeatRule's constructRule()
-		tell aRule to run
+		tell ruleFixture to run
 				
-		set matchingResult to aRule's matchTask(aTask, { })
+		set matchingResult to ruleFixture's matchTask(aTask, { })
 		
 		refute(matchingResult, "Should not have matched.")
 	end script
@@ -251,10 +253,9 @@ script |Add Daily Repeat Rule|
 		
 		set aTask to createInboxTask("Consider (Add daily repeat)")
 		
-		set aRule to cfr's AddDailyRepeatRule's constructRule()
-		tell aRule to run
+		tell ruleFixture to run
 				
-		tell aRule to processTask(aTask, { })
+		tell ruleFixture to processTask(aTask, { })
 		
 		tell application "OmniFocus"
 			set expectedRepetitionRule to {repetition method:start after completion, recurrence:"FREQ=DAILY"}
@@ -266,7 +267,7 @@ script |Add Daily Repeat Rule|
 
 end script
 
-
+(*
 script |Expired Meeting Preparation Rule| 
 	property parent : TestSet(me)
 	
@@ -309,7 +310,7 @@ script |Expired Meeting Preparation Rule|
 
 		aTask's dueOn(current date - 1 * days)
 				
-		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
+		set aRule to hoblib's ExpiredMeetingPreparationRule
 		tell aRule to run
 		
 		set matchingResult to aRule's matchTask(aTask, { })
@@ -324,7 +325,7 @@ script |Expired Meeting Preparation Rule|
 
 		aTask's dueOn(current date - 1 * days)
 				
-		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
+		set aRule to hoblib's ExpiredMeetingPreparationRule
 		tell aRule to run
 		
 		set matchingResult to aRule's matchTask(aTask, { })
@@ -339,7 +340,7 @@ script |Expired Meeting Preparation Rule|
 		
 		aTask's dueOn(current date + 1 * days)
 		
-		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
+		set aRule to hoblib's ExpiredMeetingPreparationRule
 		tell aRule to run
 				
 		set matchingResult to aRule's matchTask(aTask, { })
@@ -353,7 +354,7 @@ script |Expired Meeting Preparation Rule|
 		set aTask to createInboxTask("Prepare for your meeting 'Doe'")
 		aTask's dueOn(current date - 1 * days)
 		
-		set aRule to cfr's ExpiredMeetingPreparationRule's constructRule()
+		set aRule to hoblib's ExpiredMeetingPreparationRule
 		tell aRule to run
 				
 		tell aRule to processTask(aTask, { })
@@ -365,16 +366,20 @@ script |Expired Meeting Preparation Rule|
 	end script
 
 end script
-
+*)
 script |Evernote TaskClone Preparation Rule| 
 	property parent : TestSet(me)
 	
 	property taskFixtures : { }
 	property contextFixtures : { }
+	property ruleFixture : hoblib's EvernoteTaskClonePreparationRule
 	
 	on setUp()
 		set taskFixtures to { }
 		set contextFixtures to { }
+		
+		set ruleFixture's conditions to { }
+		set ruleFixture's actions to { }
 	end setUp
 	
 	on tearDown()
@@ -400,10 +405,9 @@ script |Evernote TaskClone Preparation Rule|
 		
 		set aTask to createInboxTask("|EN| Catch up with Dave")
 		
-		set aRule to cfr's EvernoteTaskClonePreparationRule's constructRule()
-		tell aRule to run
+		tell ruleFixture to run
 		
-		set matchingResult to aRule's matchTask(aTask, { })
+		set matchingResult to ruleFixture's matchTask(aTask, { })
 		
 		assert(matchingResult, "Should have matched.")
 		
@@ -414,10 +418,9 @@ script |Evernote TaskClone Preparation Rule|
 		
 		set aTask to createInboxTask("Catch up with Dave |EN|")
 				
-		set aRule to cfr's EvernoteTaskClonePreparationRule's constructRule()
-		tell aRule to run
+		tell ruleFixture to run
 		
-		set matchingResult to aRule's matchTask(aTask, { })
+		set matchingResult to ruleFixture's matchTask(aTask, { })
 		
 		refute(matchingResult, "Should not have matched.")
 	end script
@@ -427,10 +430,9 @@ script |Evernote TaskClone Preparation Rule|
 		
 		set aTask to createInboxTask("|EN| Catch up with Dave")
 		
-		set aRule to cfr's EvernoteTaskClonePreparationRule's constructRule()
-		tell aRule to run
+		tell ruleFixture to run
 				
-		tell aRule to processTask(aTask, { })
+		tell ruleFixture to processTask(aTask, { })
 		
 		assertEqual("--Catch up with Dave |EN|", aTask's getName())
 		

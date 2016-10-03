@@ -1,9 +1,9 @@
---use AppleScript version "2.4"
---use scripting additions
+use AppleScript version "2.4"
+use scripting additions
 
-property ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
-property domain : script "com.kraigparkinson/OmniFocusDomain"
-property rules : script "com.kraigparkinson/Hobson"
+use ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
+use domain : script "com.kraigparkinson/OmniFocusDomain"
+use rules : script "com.kraigparkinson/Hobson"
 
 
 (*! @abstract <em>[text]</em> Creating Flow with OmniFocus's name. *)
@@ -13,32 +13,16 @@ property version : "1.0.0"
 (*! @abstract <em>[text]</em> Creating Flow with OmniFocus's id. *)
 property id : "com.kraigparkinson.Default OmniFocus Rules Library"
 
-
-script TidyConsiderationsRule
-	property parent : rules's RuleBase
-	property class : "TidyConsiderationsRule"
-	
-	on prettyName()
-		return "Tidy Considerations Rule"
-	end prettyName
-		
-	match by (taskName()'s startsWith("Consider ")'s getContents())
-	match by (context()'s missing()'s getContents())
-	
-	command thru (setContext("Considerations"))
-	command thru (do()'s repetition()'s deferAnother("DAILY")'s getContents())
-end script
+---------------------------
+-- Rules inspired by Kourosh Dini's Creating Flow with OmniFocus --
+---------------------------
 
 script AddDailyRepeatRule
-	property parent : rules's RuleBase
-	property class : "AddDailyRepeatRule"
+	property parent : rules's makeRuleBase()
+	property name : "Add Daily Repeat"
 	
-	on prettyName()
-		return "Add Daily Repeat Rule"
-	end prettyName
-		
 	set aToken to " (Add daily repeat)"
-	match by (taskName()'s endsWith(aToken)'s getContents())
+	match by (taskName()'s doesContain(aToken)'s getContents())
 	
 	command thru (do()'s repetition()'s deferAnother("DAILY")'s getContents())
 	command thru (do()'s taskName()'s replace(aToken, "")'s getContents())
@@ -46,111 +30,81 @@ script AddDailyRepeatRule
 end script
 
 script AddWeeklyRepeatRule
-	property parent : rules's RuleBase
-	property class : "AddWeeklyRepeatRule"
+	property parent : rules's makeRuleBase()
+	property name : "Add Weekly Repeat"
 	
-	on prettyName()
-		return "Add Weekly Repeat Rule"
-	end prettyName
-		
 	set aToken to " (Add weekly repeat)"
-	match by (taskName()'s endsWith(aToken)'s getContents())
+	match by (taskName()'s doesContain(aToken)'s getContents())
 	
-	command thru (do()'s repetition()'s deferAnother("weekly")'s getContents())
+	command thru (do()'s repetition()'s deferAnother("WEEKLY")'s getContents())
 	command thru (do()'s taskName()'s replace(aToken, "")'s getContents())
 	
 end script
-script ExpiredMeetingPreparationRule
-	property parent : rules's RuleBase
-	property class : "ExpiredMeetingPreparationRule"
-	
-	on prettyName()
-		return "Expired Meeting Preparation Rule"
-	end prettyName
-		
-	set aSpec to taskName()'s startsWith("Prepare for your meeting")'s getContents()
-	set aSpec to aSpec's orSpec(taskName()'s startsWith("Prepare for your recurring meeting")'s getContents())
-	match by (aSpec)
-	match by (dueDate()'s isBefore(current date)'s getContents())
 
-	--	set aSpec to HasChildrenSpecification's constructSpecification()'s notSpec()
-	--	match by (aSpec)
+script TidyConsiderationsRule
+	property parent : rules's makeRuleBase()
+	property name : "Tidy considerations"
 	
-	command thru (markCompleted())
+	--Conditions
+	match by (taskName()'s startsWith("Consider")'s getContents())
+	match by (context()'s missing()'s getContents())
+
+	--Actions
+	command thru (setContext("Considerations"))
 end script
 
-script ExpiredCheckMeetingParticipationRule
-	property parent : rules's RuleBase
-	property class : "ExpiredCheckMeetingParticipationRule"
-	
-	on prettyName()
-		return "Expired Check Meeting Participation Rule"
-	end prettyName
-	
-	match by (taskName()'s startswith("Check participation for your recurring meeting")'s getContents())
-	match by (dueDate()'s isBefore(current date)'s getContents())
-	
-	command thru (markCompleted())		
-end script
+---------------------------
+-- Rules based on needs to leverage more liberal date processing from Zapier. --
+---------------------------
 
 script EvernoteTaskClonePreparationRule
-	property parent : rules's RuleBase
-	property class : "EvernoteTaskClonePreparationRule"
+	property parent : rules's makeRuleBase()
+	property name : "Prepare tasks from TaskClone for processing"
 	
-	on prettyName()
-		return "Evernote TaskClone Preparation Rule"
-	end prettyName
-		
-	set token to "|EN|"
-	
+	set token to "|EN|"	
 	match by (taskName()'s startsWith(token)'s getContents())
 	
 	command thru (do()'s taskName()'s replace(token & space, "--")'s getContents())
 	command thru (do()'s taskName()'s append(space & token)'s getContents())
 end script
 
-script ProjectTarget
-	property parent : rules's OmniFocusRuleTarget
-	property projectName : missing value 
-
-	on defineName()
-		return "Project: Meetings to Prepare"
-	end defineName
+script ExpiredMeetingPreparationRule
+	property parent : rules's makeRuleBase()
+	property name : "Process expired meeting preparation tasks"
 	
-	on getTasks()
-		set aProject to domain's ProjectRepository's findByName(projectName)
-		set theTasks to domain's taskRepositoryInstance()'s selectTasksFromProject(aProject)
-				
-		return theTasks
-	end getTasks
-
+	--Conditions
+--	set aSpec to HasChildrenSpecification's constructSpecification()'s notSpec()
+--	match by (isChildless())
+	match by (complete()'s isFalse())
+	match by (dueDate()'s isBefore(current date))
+	
+	--matchAny by { ¬
+	--		taskName()'s match()'s token("|GC| Prepare for your meeting")'s anyText(), ¬
+	--		taskName()'s match()'s token("|GC| Prepare for your recurring meeting")'s anyText() }
+	match by ¬
+		taskName()'s startsWith("|GC| Prepare for your meeting")'s getContents()'s orSpec(¬
+			taskName()'s startsWith("|GC| Prepare for your recurring meeting")'s getContents())
+	
+	--Actions
+	command thru (markCompleted())
 end script
 
-script MeetingsToPrepareTarget
-	property parent : rules's OmniFocusRuleTarget
-	
-	on defineName()
-		return "Project: Meetings to Prepare"
-	end defineName
-	
-	on getTasks()
-		set aProject to domain's ProjectRepository's findByName("Meetings to plan")
-		set theTasks to domain's taskRepositoryInstance()'s selectTasksFromProject(aProject)
+script ExpiredCheckMeetingParticipationRule
+	property parent : rules's makeRuleBase()
+	property name : "Process expired preparation tasks for recurring meetings"
 		
-		return theTasks
-	end getTasks
+	match by (taskName()'s startswith("Check participation for your recurring meeting")'s getContents())
+	match by (dueDate()'s isBefore(current date)'s getContents())
+	
+	command thru (markCompleted())		
 end script
 
 script OmniFocusTransportTextParsingRule
-	property parent : rules's RuleBase
-	property class : "OmniFocusTransportTextParsingRule"
-	
-	on prettyName()
-		return "OmniFocus Transport Text Parsing Rule"
-	end prettyName
+	property parent : rules's makeRuleBase()
+	property name : "Parse task names containing transport text"
 	
 	script EvaluatorCommand
-		property parent : domain's TaskCommand
+		property parent : domain's CommandFactory's TaskCommand
 		
 		on execute(aTask)
 			set oftt to domain's TransportTextParsingService
@@ -163,5 +117,5 @@ script OmniFocusTransportTextParsingRule
 		
 	match by (taskName()'s startsWith("--")'s getContents())
 	
-	command thru (EvaluatorCommand's constructCommand())
+	command thru (EvaluatorCommand)
 end script
