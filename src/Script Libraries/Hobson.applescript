@@ -1533,7 +1533,7 @@ on target()
 				end locateTasks
 			end script			
 			
-			set ProjectTarget's projectName to projectName
+			set ProjectTarget's projectName to pName
 			return ProjectTarget
 		end 
 	end script
