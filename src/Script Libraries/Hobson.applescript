@@ -1519,21 +1519,21 @@ on target()
 		on project(pName)
 			script ProjectTarget
 				property parent : makeOmniFocusRuleTarget()
-				property name : "Project:" & space & ">>" & pName & "<<"
+				property projectName : pName
+				property name : "Project:" & space & ">>" & projectName & "<<"
 
 				on defineName()
 					return name
 				end defineName
 
 				on locateTasks()
-					set aProject to domain's ProjectRepository's findByName(pName)
+					set aProject to domain's ProjectRepository's findByName(projectName)
 					set theTasks to domain's taskRepositoryInstance()'s selectTasksFromProject(aProject)
 		
 					return theTasks
 				end locateTasks
 			end script			
 			
-			set ProjectTarget's projectName to pName
 			return ProjectTarget
 		end 
 	end script
