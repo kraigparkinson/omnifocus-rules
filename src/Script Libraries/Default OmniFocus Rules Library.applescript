@@ -73,17 +73,15 @@ script ExpiredMeetingPreparationRule
 	property name : "Process expired meeting preparation tasks"
 	
 	--Conditions
---	set aSpec to HasChildrenSpecification's constructSpecification()'s notSpec()
---	match by (isChildless())
-	match by (complete()'s isFalse())
-	match by (dueDate()'s isBefore(current date))
+	match by (complete()'s isFalse()'s getContents())
+	match by (dueDate()'s isBefore(current date)'s getContents())
 	
 	--matchAny by { ¬
 	--		taskName()'s match()'s token("|GC| Prepare for your meeting")'s anyText(), ¬
 	--		taskName()'s match()'s token("|GC| Prepare for your recurring meeting")'s anyText() }
 	match by ¬
-		taskName()'s startsWith("|GC| Prepare for your meeting")'s getContents()'s orSpec(¬
-			taskName()'s startsWith("|GC| Prepare for your recurring meeting")'s getContents())
+		(taskName()'s startsWith("|GC| Prepare for your meeting")'s getContents()'s orSpec(¬
+			taskName()'s startsWith("|GC| Prepare for your recurring meeting")'s getContents()))
 	
 	--Actions
 	command thru (markCompleted())
@@ -107,9 +105,7 @@ script OmniFocusTransportTextParsingRule
 		property parent : domain's CommandFactory's TaskCommand
 		
 		on execute(aTask)
-			set oftt to domain's TransportTextParsingService
-			
-			set aService to oftt's OmniFocusTransportTextService
+			set aService to domain's TransportTextParsingService
 		
 			tell aService to updateTaskPropertiesFromName(aTask)
 		end execute

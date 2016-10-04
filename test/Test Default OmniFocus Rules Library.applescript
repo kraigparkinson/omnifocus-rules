@@ -16,48 +16,6 @@ property suite : makeTestSuite("Default OmniFocus Rules Library")
 
 my autorun(suite)
 
-script |Has Children Specification|
-	property parent : TestSet(me)
-
-	property taskFixtures : { }
-	property contextFixtures : { }
-
-	on setUp()
-		set taskFixtures to { }
-		set contextFixtures to { }
-		
-		set domain's _taskRepository to domain's DocumentTaskRepository
-	end setUp
-
-	on tearDown()
-		repeat with aTask in my taskFixtures
-			domain's taskRepositoryInstance()'s removeTask(aTask)
-		end repeat
-		tell application "OmniFocus"
-			repeat with aContext in my contextFixtures
-				delete aContext
-			end repeat
-		end tell
-	end tearDown
-
-	on createInboxTask(transportText)
-		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
-		set newTask to first item of newTasks
-		set end of taskFixtures to newTask 		
-		return newTask 		
-	end createInboxTask
-
-	script |Should pass when has a child|
-		set aParentTask to createInboxTask("Test Parent")
-		set aChildTask to createInboxTask("Test Child")
-
-		tell application "OmniFocus"
-			set aChildTask to end of aParentTask's original's tasks
-
-			assertEqual(1, aParentTask's original's number of tasks)
-		end tell
-	end script
-end script
 
 script |Add OmniOutliner Template as Children|
 	property parent : TestSet(me)
@@ -96,7 +54,7 @@ script |Add OmniOutliner Template as Children|
 		assertNotMissing(aFile, "Should have loaded the file.")
 	end script
 end script
-(*
+
 script |Tidy Incomplete Consideration Tasks Rule| 
 	property parent : TestSet(me)
 	
@@ -139,7 +97,7 @@ script |Tidy Incomplete Consideration Tasks Rule|
 		set aContext to createContext("Test Context")
 		
 		tell application "OmniFocus"
-			set aTask's original's context to aContext
+			tell aTask to assignToContext(aContext)
 		end tell
 		
 		set aRule to hoblib's TidyConsiderationsRule
@@ -163,7 +121,7 @@ script |Tidy Incomplete Consideration Tasks Rule|
 		assert(matchingResult, "Should have matched.")
 	end script
 	
-	script |updates context and repetition rule to defer daily|
+	script |should update context and repetition rule to defer daily|
 		property parent : UnitTest(me)
 		
 		set aTask to createInboxTask("Consider foo")
@@ -174,17 +132,12 @@ script |Tidy Incomplete Consideration Tasks Rule|
 				
 		tell aRule to processTask(aTask, { })
 		
-		tell application "OmniFocus"
-			set expectedRepetitionRule to {repetition method:start after completion, recurrence:"FREQ=DAILY"}
-			
-			my assertEqual(aContext, aTask's original's context)
-			my assertEqual(expectedRepetitionRule, aTask's original's repetition rule)
-		end tell
+		assertEqual(aContext, aTask's _contextValue())
 		
 	end script
 
 end script
-*)
+
 script |Add Daily Repeat Rule| 
 	property parent : TestSet(me)
 	
@@ -260,14 +213,13 @@ script |Add Daily Repeat Rule|
 		tell application "OmniFocus"
 			set expectedRepetitionRule to {repetition method:start after completion, recurrence:"FREQ=DAILY"}
 			my assertEqual("Consider", aTask's getName())
-			my assertEqual(expectedRepetitionRule, aTask's original's repetition rule)
+			my assertEqual(expectedRepetitionRule, aTask's _repetitionRuleValue())
 		end tell
 		
 	end script
 
 end script
 
-(*
 script |Expired Meeting Preparation Rule| 
 	property parent : TestSet(me)
 	
@@ -306,7 +258,7 @@ script |Expired Meeting Preparation Rule|
 	script |matches with text in name|
 		property parent : UnitTest(me)
 		
-		set aTask to createInboxTask("Prepare for your meeting 'Foo'")
+		set aTask to createInboxTask("|GC| Prepare for your meeting 'Foo'")
 
 		aTask's dueOn(current date - 1 * days)
 				
@@ -321,7 +273,7 @@ script |Expired Meeting Preparation Rule|
 	script |matches with recurring text in name|
 		property parent : UnitTest(me)
 		
-		set aTask to createInboxTask("Prepare for your recurring meeting 'Foo'")
+		set aTask to createInboxTask("|GC| Prepare for your recurring meeting 'Foo'")
 
 		aTask's dueOn(current date - 1 * days)
 				
@@ -336,7 +288,7 @@ script |Expired Meeting Preparation Rule|
 	script |does not match when task is in the future|
 		property parent : UnitTest(me)
 		
-		set aTask to createInboxTask("Prepare for your meeting 'Doe'")
+		set aTask to createInboxTask("|GC| Prepare for your meeting 'Doe'")
 		
 		aTask's dueOn(current date + 1 * days)
 		
@@ -351,7 +303,7 @@ script |Expired Meeting Preparation Rule|
 	script |marks complete|
 		property parent : UnitTest(me)
 		
-		set aTask to createInboxTask("Prepare for your meeting 'Doe'")
+		set aTask to createInboxTask("|GC| Prepare for your meeting 'Doe'")
 		aTask's dueOn(current date - 1 * days)
 		
 		set aRule to hoblib's ExpiredMeetingPreparationRule
@@ -366,7 +318,7 @@ script |Expired Meeting Preparation Rule|
 	end script
 
 end script
-*)
+
 script |Evernote TaskClone Preparation Rule| 
 	property parent : TestSet(me)
 	
@@ -436,6 +388,95 @@ script |Evernote TaskClone Preparation Rule|
 		
 		assertEqual("--Catch up with Dave |EN|", aTask's getName())
 		
+	end script
+	
+	
+end script
+
+script |OmniFocus Transport Text Parsing Rule| 
+	property parent : TestSet(me)
+	
+	property taskFixtures : { }
+	property contextFixtures : { }
+	property projectFixtures : { }
+	property ruleFixture : hoblib's OmniFocusTransportTextParsingRule
+	
+	on setUp()
+		set taskFixtures to { }
+		set contextFixtures to { }
+		set projectFixtures to { }
+		
+		set ruleFixture's conditions to { }
+		set ruleFixture's actions to { }
+	end setUp
+	
+	on tearDown()
+		repeat with aTask in my taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
+		tell application "OmniFocus"
+			repeat with aProject in my projectFixtures
+				delete aProject
+			end repeat
+		end tell
+		tell application "OmniFocus"
+			repeat with aContext in my contextFixtures
+				delete aContext
+			end repeat
+		end tell
+	end tearDown
+
+	on createInboxTask(transportText)
+		set newTask to domain's TaskFactory's create()
+		newTask's setName(transportText)
+		set newTask to domain's taskRepositoryInstance()'s addTask(newTask)
+		set end of taskFixtures to newTask 		
+		return newTask 		
+	end createInboxTask
+	
+	script |matches when token is in front|
+		property parent : UnitTest(me)
+		
+		set aTask to createInboxTask("--Catch up with Dave")
+		
+		tell ruleFixture to run
+		
+		set matchingResult to ruleFixture's matchTask(aTask, { })
+		
+		assert(matchingResult, "Should have matched.")
+		
+	end script	
+	
+	script |does not match when token isn't in front|
+		property parent : UnitTest(me)
+		
+		set aTask to createInboxTask("Catch up with Dave |EN|")
+				
+		tell ruleFixture to run
+		
+		set matchingResult to ruleFixture's matchTask(aTask, { })
+		
+		refute(matchingResult, "Should not have matched.")
+	end script
+	
+	script |parses task with task name as transport text|
+		property parent : UnitTest(me)
+		
+		set expectedProjectName to "Test transport text parsing rule"
+		set expectedContextName to expectedProjectName
+		set aProject to domain's ProjectRepository's create(expectedProjectName)
+		set end of projectFixtures to aProject
+		set aContext to domain's ContextRepository's create(expectedProjectName)
+		set end of contextFixtures to aContext
+		set aTask to createInboxTask("--Catch up with Dave ::" & expectedProjectName & " @" & expectedContextName)
+		
+		tell ruleFixture to run
+				
+		tell ruleFixture to processTask(aTask, { })
+		
+		assertEqual("Catch up with Dave", aTask's getName())
+		assertEqual(aProject, aTask's _assignedContainerValue())
+		assertEqual(aContext, aTask's _contextValue())
 	end script
 	
 	

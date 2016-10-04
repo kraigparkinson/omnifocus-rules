@@ -370,7 +370,7 @@ script ContextNameRetrievalStrategy
 	
 	on getValue(aTask)
 		using terms from application "OmniFocus"
-			return aTask's original's context's name
+			return aTask's _contextValue()'s name
 		end using terms from
 	end getValue
 end script
@@ -482,17 +482,13 @@ script SpecificationFactory
 		
 		script DateSpecification
 			property parent : ddd's DefaultSpecification
-			property referenceValue : aReferenceValue
 			property sourcingStrategy : aSourcingStrategy
 			property validationStrategy : aValidationStrategy
 			property class : "DateSpecification"
 			property name : "DateSpecification"
 	
 			on isSatisfiedBy(obj)
-				set expected to referenceValue
-				set actual to sourcingStrategy's getValue(obj)
-		
-				return validationStrategy's validateDate(actual)
+				return validationStrategy's validateDate(sourcingStrategy's getValue(obj))
 			end isSatisfiedBy
 		end script
 
@@ -509,23 +505,29 @@ script SpecificationFactory
 
 		set validation to the result
 
-		set aSpec to makeDateSpecification(expected, dateFetcher, validation)
+		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
 		set aSpec's name to "same as " & expected
 		return aSpec
 	end makeSameAsDateSpecification
 
 	on makeIsBeforeDateSpecification(referenceDate, dateFetcher)
+		script IsBeforeDateSpecification
+			property parent : ddd's Specification
+			property reference_date : referenceDate
+			on isSatisfiedBy(aDate)
+				aDate comes before reference_date
+			end isSatisfiedBy
+		end script
+		
 		script 
 			property parent : DateValidationStrategy
 			on validateDate(actual)
-				set isValid to (actual comes before referenceDate)
-				odebug("Does actual: " & actual & " comes before: " & referenceDate & "? " & isValid)
-				return isValid
+				actual comes before referenceDate
 			end validateDate
 		end script
 
 		set validation to the result
-		set aSpec to makeDateSpecification(referenceDate, dateFetcher, validation)
+		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
 		set aSpec's name to "is before " & referenceDate
 		return aSpec
 	end makeIsBeforeDateSpecification
@@ -539,7 +541,7 @@ script SpecificationFactory
 		end script
 
 		set validation to the result
-		set aSpec to makeDateSpecification(referenceDate, dateFetcher, validation)
+		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
 		set aSpec's name to "is after " & referenceDate
 		return aSpec
 	end makeIsAfterDateSpecification
@@ -562,7 +564,7 @@ script SpecificationFactory
 		end script
 
 		set validation to the result
-		set aSpec to makeDateSpecification(specifiedDays, dateFetcher, validation)
+		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
 		set aSpec's name to "in the next " & specifiedDays & " days"
 		return aSpec
 	end makeInTheNextIntervalDateSpecification
@@ -581,7 +583,7 @@ script SpecificationFactory
 		end script
 
 		set validation to the result
-		set aSpec to makeDateSpecification(specifiedDays, dateFetcher, validation)
+		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
 		set aSpec's name to "in the last " & specifiedDays & " days"
 		return aSpec
 	end makeInTheLastIntervalDateSpecification
@@ -623,19 +625,17 @@ script SpecificationFactory
 		end matchesValue
 	end 
 	
-	on makeBooleanSpecification(aReferenceValue, aSourcingStrategy, aValidationStrategy)
-		if (aReferenceValue is missing value or aSourcingStrategy is missing value) then error "Can't create BooleanSpecification with missing properties"
+	on makeBooleanSpecification(aSourcingStrategy, aValidationStrategy)
+		if (aValidationStrategy is missing value or aSourcingStrategy is missing value) then error "Can't create BooleanSpecification with missing properties"
 
 		script BooleanSpecification
 			property parent : ddd's DefaultSpecification
-			property referenceValue : aReferenceValue
 			property sourcingStrategy : aSourcingStrategy
 			property validationStrategy : aValidationStrategy
-			
-			property name : "matches value (" & referenceValue & ") from (" & (sourcingStrategy's name) & ")"	
-				
+			property class : "BooleanSpecification"
+							
 			on isSatisfiedBy(obj)
-				return validationStrategy's matchesText(sourcingStrategy's getValue(obj))
+				return validationStrategy's matchesValue(sourcingStrategy's getValue(obj))
 			end isSatisfiedBy
 		end script
 		return BooleanSpecification
@@ -1189,16 +1189,6 @@ end script --CommandFactory
 
 
 
-script HasChildrenSpecification
-	property parent : ddd's DefaultSpecification
-	property name : "Has Child Tasks"
-	
-	on isSatisfiedBy(aTask)
-		tell application "OmniFocus"
-			return aTask's original's number of tasks is greater than 0
-		end tell
-	end isSatisfiedBy
-end script
 
 on makeTaskNameCommandBuilder()
 	script TaskNameCommandBuilder
@@ -1223,14 +1213,14 @@ on makeTaskNameCommandBuilder()
 			return me
 		end append
 	
-		on replace(original, replacement)
-			set textToFind to original
-			set textToReplace to replacement
+		on replace(original_text, replacement_text)
+			set textToFind to original_text
+			set textToReplace to replacement_text
 			return me
 		end replace
 
-		on remove(original)
-			return replace(original, "")
+		on remove(original_text)
+			return replace(original_text, "")
 		end remove
 	
 		on getContents()
@@ -1497,7 +1487,18 @@ script Inbox
 	
 	on locateTasks()
 		return domain's taskRepositoryInstance()'s selectAllInboxTasks()
---		return taskRepositoryInstance()'s selectAllInboxTasks()
+	end locateTasks
+end script
+
+script TransportTextInboxTasks
+	property parent : makeOmniFocusRuleTarget()
+
+	on defineName()
+		return "Inbox"
+	end defineName
+
+	on locateTasks()
+		return domain's taskRepositoryInstance()'s selectUnparsedInboxTasks()
 	end locateTasks
 end script
 
