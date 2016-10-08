@@ -1181,6 +1181,94 @@ script CommandFactory
 			end execute
 		end script
 	end makeAppendTextToTaskNameCommand
+
+	on makeSetNoteCommand(note_text)
+		script SetNoteCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property newNote : note_text
+
+			on execute(aTask)
+				tell aTask to setNote(newNote)
+			end execute
+		end script 
+		return SetNoteCommand
+	end makeSetNoteCommand
+	
+	on makeStripTokenFromNoteCommand(aToken)
+		script StripTokenFromNoteCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property token : aToken
+	
+			on execute(aTask)
+				local note_text
+		
+				set note_text to aTask's _noteValue() as text
+		
+				local revisedNote
+				
+				using terms from script "com.kraigparkinson/ASText"
+					set originalNoteStr to textutil's makeStringObj(note_text)
+					set revisedNoteStr to originalNoteStr's removeText(token)
+					set revisedNote to revisedNoteStr's asText()
+				end using terms from
+
+				tell aTask to setNote(revisedNote)
+			end execute
+		end script
+	end makeStripTokenFromTaskNameCommand
+	
+	on makePrependTextToNoteCommand(aTextToPrepend)
+		script PrependTextToNoteCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property textToPrepend : aTextToPrepend
+	
+			on execute(aTask)
+				local note_text
+
+				set note_text to aTask's _noteValue()
+		
+				set revisedNote to textToPrepend & note_text
+				tell aTask to setNote(revisedNote)
+			end execute
+		end script
+		return PrependTextToNoteCommand
+	end makePrependTextToTaskNameCommand
+	
+	on makeReplaceTokenFromNoteCommand(aFindToken, aReplaceToken)
+		script ReplaceTokenFromNoteCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property findToken : aFindToken
+			property replaceToken : aReplaceToken
+	
+			on execute(aTask)
+				local note_text
+		
+				set note_text to aTask's _noteValue() as text
+		
+				local revisedNote
+				set revisedNote to textutil's makeStringObj(note_text)'s replaceText(findToken, replaceToken)'s asText()
+
+				tell aTask to setNote(revisedNote)
+			end execute
+		end script
+		return ReplaceTokenFromNoteCommand
+	end makeReplaceTokenFromNoteCommand
+	
+	on makeAppendTextToNoteCommand(aTextToAppend)
+		script AppendTextToNoteCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property textToAppend : aTextToAppend
+	
+			on execute(aTask)
+				local note_text
+
+				set note_text to aTask's _noteValue() as text
+		
+				set revisedNote to note_text & textToAppend
+				tell aTask to setName(revisedNote)
+			end execute
+		end script
+	end makeAppendTextToNoteCommand
 	
 end script --CommandFactory
 
@@ -1250,6 +1338,66 @@ on makeTaskNameCommandBuilder()
 	return TaskNameCommandBuilder
 end makeTaskNameCommandBuilder
 
+on makeNoteCommandBuilder()
+	script NoteCommandBuilder
+		property newTextValue : missing value
+		property textToPrepend : missing value
+		property textToAppend : missing value
+		property textToFind : missing value
+		property textToReplace : missing value
+	
+		on rename(newText)
+			set newTextValue to newText
+			return me
+		end rename
+	
+		on prepend(theText)
+			set textToPrepend to theText
+			return me
+		end prepend
+	
+		on append(theText)
+			set textToAppend to theText
+			return me
+		end append
+	
+		on replace(original_text, replacement_text)
+			set textToFind to original_text
+			set textToReplace to replacement_text
+			return me
+		end replace
+
+		on remove(original_text)
+			return replace(original_text, "")
+		end remove
+	
+		on getContents()
+			set commandList to { }
+		
+			if newTextValue is not missing value then 
+				set end of commandList to CommandFactory's makeSetNoteCommand(newTextValue)
+			end if 
+
+			if textToPrepend is not missing value then 
+				set end of commandList to CommandFactory's makePrependTextToNoteCommand(textToPrepend)
+			end if		
+		
+			if textToAppend is not missing value then 
+				set end of commandList to CommandFactory's makeAppendTextToNoteCommand(textToAppend)
+			end if		
+
+			if (textToFind is not missing value and textToReplace is not missing value) then 
+				set end of commandList to CommandFactory's makeReplaceTokenFromNoteCommand(textToFind, textToReplace)
+			end if		
+			
+			set aCommand to domain's CommandFactory's makeMacroTaskCommand(commandList)
+
+			return aCommand
+		end getContents
+	end script
+	return NoteCommandBuilder
+end makeNoteCommandBuilder
+
 on makeRepetitionRuleCommandBuilder()
 	script RepetitionRuleCommandBuilder
 		property frequency : missing value
@@ -1296,12 +1444,19 @@ end script
 on makeRuleCommandBuilder()
 	script RuleCommandBuilder
 		property nameCommandBuilders : { }
+		property noteCommandBuilders : { }
+		
 		property repetitionBuilder : missing value
 
 		on taskName()
 			set end of nameCommandBuilders to makeTaskNameCommandBuilder()
 			return last item of nameCommandBuilders
 		end taskName
+		
+		on changeNote()
+			set end of noteCommandBuilders to makeNoteCommandBuilder()
+			return last item of noteCommandBuilders
+		end changeNote
 	
 		on repetition()
 			set repetitionBuilder to makeRepetitionRuleCommandBuilder()
@@ -1312,6 +1467,9 @@ on makeRuleCommandBuilder()
 			set commandList to { }
 			
 			repeat with aBuilder in nameCommandBuilders
+				set end of commandList to aBuilder's getContents()
+			end repeat
+			repeat with aBuilder in noteCommandBuilders
 				set end of commandList to aBuilder's getContents()
 			end repeat
 			if repetitionBuilder is not missing value then set end of commandList to repetitionBuilder's getContents()
@@ -1529,8 +1687,7 @@ on target()
 
 				on locateTasks()
 					set aProject to domain's ProjectRepository's findByName(projectName)
-					set theTasks to domain's taskRepositoryInstance()'s selectTasksFromProject(aProject)
-		
+					set theTasks to domain's taskRepositoryInstance()'s selectIncompleteProjectTasks(aProject)		
 					return theTasks
 				end locateTasks
 			end script			
@@ -1589,22 +1746,29 @@ end registerRuleRepository
 on initializeRuleRepository()
 	odebug("Initializing rule repository.")
 
-	--Set up container	
-	set pathToRules to POSIX path of ((path to home folder from user domain) as text)
-	set pathToRules to pathToRules & "OmniFocus Rules/"
-	set pathToRules to pathToRules & "omnirulefile.scptd"
-
+	script ScriptLoadingRuleRepository
+		on getAll()
+			set aScript to script "omnirulefile"
+			set suite to _makeRuleLoader()'s loadRulesFromScript(aScript)
+			
+			return suite
+		end getAll
+	end script
+	
 	script FileLoadingRuleRepository
 		property name : "FileLoadingRuleRepository"
 		
-		
-		
 		on getAll()
+			set pathToRules to POSIX path of ((path to home folder from user domain) as text)
+			set pathToRules to pathToRules & "OmniFocus Rules/"
+			set pathToRules to pathToRules & "omnirulefile.scptd"		
+		
 			set suite to _makeRuleLoader()'s loadRulesFromFile(pathToRules)
 			return suite
 		end getAll
 	end script
 
+--	registerRuleRepository(ScriptLoadingRuleRepository)
 	registerRuleRepository(FileLoadingRuleRepository)
 end initializeRuleRepository
 
@@ -1630,10 +1794,19 @@ script RuleProcessingService
 	end processInbox
 
 	on processAllRules()
+		odebug("RuleProcessingService: ProcessAllRules called.")
+
 		set repo to locateRuleRepository()
 
 		--Do stuff	
-		set suite to repo's getAll()
-		tell suite to exec()
+		try
+			set suite to repo's getAll()
+			tell suite to exec()
+		on error msg
+			owarn("Error executing rules: " & msg)
+			error msg
+		end try
+
+		odebug("RuleProcessingService: ProcessAllRules completed.")
 	end processAllRules
 end script

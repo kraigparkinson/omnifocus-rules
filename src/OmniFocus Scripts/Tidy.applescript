@@ -34,4 +34,6 @@ end script
 
 on run	
 	tell suite to exec()	
+	display notification "Finished tidying selected task(s)." with title "OmniFocus" subtitle "Tidy" sound name "Sosumi"
+
 end run

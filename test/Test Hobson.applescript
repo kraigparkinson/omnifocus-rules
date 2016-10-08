@@ -19,6 +19,7 @@ property suite : makeTestSuite("Hobson")
 
 my autorun(suite)
 
+
 (*
 script |RuleRepository|
 	property parent : TestSet(me)
@@ -66,6 +67,47 @@ script |RuleRepository|
 	
 end script
 *)
+script |OmniFocus Document Fixture|
+	property parent : makeFixture()
+	
+	property documentFixture : missing value
+	property taskFixtures_list : missing value
+	
+	on setUp()
+		set taskFixtures_list to { }
+
+		tell application "OmniFocus"
+			set document_list to documents whose name is "Test"
+			set documentFixture to first item of document_list			
+		end tell
+
+		tell domain 
+			set aRegistry to getRegistryInstance()
+			tell aRegistry to registerDocumentInstance(documentFixture)
+		end tell
+	end setUp
+	
+	on tearDown()
+		repeat with aTask in taskFixtures_list
+			tell application "OmniFocus"
+				delete aTask
+			end tell
+		end repeat
+	end tearDown
+	
+	on createTask(name_text)
+		local aTask
+		tell application "OmniFocus"
+			tell documentFixture
+				set aTask to (make new inbox task with properties {name:name_text})
+			end tell
+		end tell
+		
+		set end of taskFixtures_list to aTask
+		
+		return aTask		
+	end create
+end script --OmniFocus Document Fixture
 
 script MockTarget
 	property parent : rules's makeOmniFocusRuleTarget()
@@ -310,12 +352,13 @@ script |DateSpecification|
 end script
 
 script |TaskNameRetrievalStrategy|
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	property builder : missing value
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 		
 		set builder to rules's makeTextSpecificationBuilder(rules's TaskNameRetrievalStrategy)
@@ -324,6 +367,7 @@ script |TaskNameRetrievalStrategy|
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -449,15 +493,17 @@ end script
 
 
 script |TaskRenaming|
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -523,15 +569,17 @@ script |TaskRenaming|
 end script
 
 script |ContextConditionBuilder|
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -597,17 +645,19 @@ script |DateConditionBuilder|
 end script
 
 script |RuleBase|
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 		
 		set domain's _taskRepository to domain's DocumentTaskRepository
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -686,17 +736,19 @@ end script --|RuleSuite|
 
 
 script |Rule Runner|
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 		
 		set domain's _taskRepository to domain's DocumentTaskRepository
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -804,15 +856,17 @@ script |Rule Runner|
 end script --|Rule Runner|
 
 script |DefaultOmniFocusRuleSet| 
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -937,14 +991,17 @@ script |DefaultOmniFocusRuleSet|
 end script --|DefaultOmniFocusRuleSet|
 
 script |OmniFocus Rule Processing Daemon|
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
+
 	property taskFixtures : { }
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat

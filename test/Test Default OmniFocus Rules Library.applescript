@@ -16,19 +16,62 @@ property suite : makeTestSuite("Default OmniFocus Rules Library")
 
 my autorun(suite)
 
+script |OmniFocus Document Fixture|
+	property parent : makeFixture()
+	
+	property documentFixture : missing value
+	property taskFixtures_list : missing value
+	
+	on setUp()
+		set taskFixtures_list to { }
+
+		tell application "OmniFocus"
+			set document_list to documents whose name is "Test"
+			set documentFixture to first item of document_list			
+		end tell
+
+		tell domain 
+			set aRegistry to getRegistryInstance()
+			tell aRegistry to registerDocumentInstance(documentFixture)
+		end tell
+	end setUp
+	
+	on tearDown()
+		repeat with aTask in taskFixtures_list
+			tell application "OmniFocus"
+				delete aTask
+			end tell
+		end repeat
+	end tearDown
+	
+	on createTask(name_text)
+		local aTask
+		tell application "OmniFocus"
+			tell documentFixture
+				set aTask to (make new inbox task with properties {name:name_text})
+			end tell
+		end tell
+		
+		set end of taskFixtures_list to aTask
+		
+		return aTask		
+	end create
+end script --OmniFocus Document Fixture
 
 script |Add OmniOutliner Template as Children|
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 
 	property taskFixtures : { }
 	property contextFixtures : { }
 
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 		set contextFixtures to { }
 	end setUp
 
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in my taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -56,17 +99,19 @@ script |Add OmniOutliner Template as Children|
 end script
 
 script |Tidy Incomplete Consideration Tasks Rule| 
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	property contextFixtures : { }
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 		set contextFixtures to { }
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in my taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -125,7 +170,7 @@ script |Tidy Incomplete Consideration Tasks Rule|
 		property parent : UnitTest(me)
 		
 		set aTask to createInboxTask("Consider foo")
-		set aContext to domain's ContextRepository's findByName("Considerations")
+		set aContext to createContext("Considerations")
 		
 		set aRule to hoblib's TidyConsiderationsRule
 		tell aRule to run
@@ -139,13 +184,14 @@ script |Tidy Incomplete Consideration Tasks Rule|
 end script
 
 script |Add Daily Repeat Rule| 
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	property contextFixtures : { }
 	property ruleFixture : hoblib's AddDailyRepeatRule
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 		set contextFixtures to { }
 
@@ -154,6 +200,7 @@ script |Add Daily Repeat Rule|
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in my taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -221,17 +268,19 @@ script |Add Daily Repeat Rule|
 end script
 
 script |Expired Meeting Preparation Rule| 
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	property contextFixtures : { }
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 		set contextFixtures to { }
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in my taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -320,13 +369,14 @@ script |Expired Meeting Preparation Rule|
 end script
 
 script |Evernote TaskClone Preparation Rule| 
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	property contextFixtures : { }
 	property ruleFixture : hoblib's EvernoteTaskClonePreparationRule
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 		set contextFixtures to { }
 		
@@ -335,6 +385,7 @@ script |Evernote TaskClone Preparation Rule|
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in my taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat
@@ -386,7 +437,8 @@ script |Evernote TaskClone Preparation Rule|
 				
 		tell ruleFixture to processTask(aTask, { })
 		
-		assertEqual("--Catch up with Dave |EN|", aTask's getName())
+		assertEqual("--Catch up with Dave", aTask's getName())
+		assertEqual("INFO: This task was generated from Evernote via TaskClone." & linefeed & linefeed, aTask's _noteValue()'s text)
 		
 	end script
 	
@@ -394,7 +446,7 @@ script |Evernote TaskClone Preparation Rule|
 end script
 
 script |OmniFocus Transport Text Parsing Rule| 
-	property parent : TestSet(me)
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
 	
 	property taskFixtures : { }
 	property contextFixtures : { }
@@ -402,6 +454,7 @@ script |OmniFocus Transport Text Parsing Rule|
 	property ruleFixture : hoblib's OmniFocusTransportTextParsingRule
 	
 	on setUp()
+		continue setUp()
 		set taskFixtures to { }
 		set contextFixtures to { }
 		set projectFixtures to { }
@@ -411,6 +464,7 @@ script |OmniFocus Transport Text Parsing Rule|
 	end setUp
 	
 	on tearDown()
+		continue tearDown()
 		repeat with aTask in my taskFixtures
 			domain's taskRepositoryInstance()'s removeTask(aTask)
 		end repeat

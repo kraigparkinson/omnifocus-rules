@@ -15,6 +15,7 @@ property suite : makeTestSuite("OmniFocus Rule Processing Daemon")
 
 my autorun(suite)
 
+
 script |Hazel Rule Processing|
 	property parent : TestSet(me)
 
@@ -29,13 +30,15 @@ script |Hazel Rule Processing|
 		
 		set theFile to missing value
 		set inputAttributes to missing value
-		
+			
 		script MockRuleRepository 
 			property name : "MockRuleRepository"
+			property handlerCalled : false
 			
 			on getAll()
 				script MockSuite
 					on exec()
+						set handlerCalled to true
 					end exec
 				end script
 				return MockSuite
@@ -44,14 +47,9 @@ script |Hazel Rule Processing|
 		
 		tell daemon's hobson to registerRuleRepository(MockRuleRepository)
 		
-		set hazelResult to daemon's hazelProcessFile(theFile, inputAttributes)
-		
-		refuteMissing(hazelResult, "Expected hazelResult record to come back")
-		
-		refuteMissing(hazelResult)
-		refute(hazelResult's hazelStop, "Should be successful")
-		assertMissing(hazelResult's hazelSwitchFile, "Should not identify any file to switch")
-		refuteMissing(hazelResult's hazelOutputAttributes, "Should have a list of attributes, even if it's empty.")
+		daemon's hazelProcessFile(theFile, inputAttributes)
+		should(MockRuleRepository's handlerCalled, "Rule suite should have been called")
+--		assertMissing(hazelResult, "Expected hazelResult record to come back")		
 	end script
 	
 end script

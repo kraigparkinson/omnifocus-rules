@@ -65,7 +65,7 @@ script EvernoteTaskClonePreparationRule
 	match by (taskName()'s startsWith(token)'s getContents())
 	
 	command thru (do()'s taskName()'s replace(token & space, "--")'s getContents())
-	command thru (do()'s taskName()'s append(space & token)'s getContents())
+	command thru (do()'s changeNote()'s prepend("INFO: This task was generated from Evernote via TaskClone." & linefeed & linefeed)'s getContents())
 end script
 
 script ExpiredMeetingPreparationRule

@@ -245,6 +245,7 @@ end script
 
 script installRules
 	property parent : Task(me)
+--	property targetDir : POSIX path of ((path to library folder from user domain) as text) & "Script Libraries"
 	property targetDir : POSIX path of ((path to home folder from user domain) as text) & "OmniFocus Rules"
 
 	tell BuildRules to exec:{}
@@ -303,6 +304,8 @@ script RunTests
 	property name : "test/run"
 	property description : "Build and run tests"
 	property printSuccess : false
+	
+	shell for "open" & space & POSIX path of ((path to home folder) as text) & "test.ofocus"
 	
 	tell BuildTests to exec:{}
 	-- The following causes a segmentation fault unless ASUnit in installed in a shared location

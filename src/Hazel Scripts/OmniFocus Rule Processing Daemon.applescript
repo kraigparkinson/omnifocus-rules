@@ -18,7 +18,13 @@ property inputAttributes : missing value
 hazelProcessFile(theFile, inputAttributes)
 *)
 on hazelProcessFile(theFile, inputAttributes)
-	tell hobson's RuleProcessingService to processAllRules()
+	log "Starting to process OmniFocus file."
+--	tell hobson's RuleProcessingService to processAllRules()
+	tell hobson's RuleProcessingService to processInbox()
 	
-	return {hazelStop:false, hazelSwitchFile:missing value, hazelOutputAttributes:{ }}
+	log "Finished processing OmniFocus file."
 end hazelProcessFile
+
+on run
+	hazelProcessFile(missing value, missing value)
+end run

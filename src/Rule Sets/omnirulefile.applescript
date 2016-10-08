@@ -2,8 +2,12 @@
 use AppleScript version "2.4"
 use scripting additions
 
+property id : "omnirulefile"
+property name : "omnirulefile"
+
 use Rules : script "com.kraigparkinson/Hobson"
 use hoblib : script "com.kraigparkinson/Default OmniFocus Rules Library"
+
 
 property parent : Rules
 
@@ -13,7 +17,7 @@ on run argv
 	continue run argv
 end run
 
-script |Mark complete any past due tasks|
+script MarkCompletePastDueTasks
 	property parent : Rules's makeRuleBase()
 	property name : "Mark complete past due tasks"
 		
@@ -32,6 +36,15 @@ script ProcessBcc
 	command thru (do()'s taskName()'s prepend("Follow up ")) 
 end script
 
+(*
+script TransportTaskParsingScript
+	property parent : RuleSet(me)
+	property name : "Process Inbox Tasks"
+	property target : Rules's TransportTextInboxTasks
+
+	evaluate by hoblib's OmniFocusTransportTextParsingRule
+end script
+*)
 script InboxConfigScript
 	property parent : RuleSet(me)
 	property name : "Process Inbox Tasks"
@@ -52,6 +65,6 @@ script MeetingsToPlanScript
 	
 	evaluate by hoblib's ExpiredMeetingPreparationRule		
 	evaluate by hoblib's ExpiredCheckMeetingParticipationRule	
-	evaluate by |Mark complete any past due tasks|
+	evaluate by MarkCompletePastDueTasks
 end script
 
