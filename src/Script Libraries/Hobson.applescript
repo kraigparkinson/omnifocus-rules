@@ -3,6 +3,7 @@ use scripting additions
 
 use textutil : script "com.kraigparkinson/ASText"
 use dateutil : script "com.kraigparkinson/ASDate"
+use collections : script "com.kraigparkinson/ASCollections"
 use ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
 use domain : script "com.kraigparkinson/OmniFocusDomain"
 
@@ -197,22 +198,22 @@ script RuleFactory
 					set taskIsMatched to false
 
 					try
-						set matchResult to matchTask(aTask, inputAttributes)
+						set aMatchResult to matchTask(aTask, inputAttributes)
 	
-						if (matchResult's class is boolean) 
-							odebug("[" & name & "]" & "Match result: " & matchResult)
-							if (matchResult) 
+						if (aMatchResult's class is boolean) 
+							odebug("[" & name & "]" & "Match result: " & aMatchResult)
+							if (aMatchResult) 
 								set taskIsMatched to true
 							end if
-						else if (matchResult's class is record)
-							odebug("[" & name & "]" & "Match result: " & matchResult's passesCriteria)
+						else if (aMatchResult's class is record)
+							odebug("[" & name & "]" & "Match result: " & aMatchResult's passesCriteria)
 					
-							if (matchResult's passesCriteria)
+							if (aMatchResult's passesCriteria)
 								set taskIsMatched to true
-								set inputAttributes to matchResult's outputAttributes
+								set inputAttributes to aMatchResult's outputAttributes
 							end if
 						else 
-							error "[" & name & "]" & "Unrecognized response from matching handler: " & matchResult
+							error "[" & name & "]" & "Unrecognized response from matching handler: " & aMatchResult
 						end if
 			
 					on error message
@@ -290,17 +291,17 @@ script RuleFactory
 				odebug("[" & name & "]" & "Preparing to evaluate " & count of conditions & " conditions.")
 				repeat with condition in conditions
 					odebug("[" & name & "]" & "Evaluating condition: " & condition's name)
-					set matchResult to condition's isSatisfiedBy(aTask)
+					set aMatchResult to condition's isSatisfiedBy(aTask)
 			
-					if (matchResult's class is boolean)
-						odebug("[" & name & "]" & "Task meets condition: " & matchResult)
+					if (aMatchResult's class is boolean)
+						odebug("[" & name & "]" & "Task meets condition: " & aMatchResult)
 			
-						if (matchResult) then set satisfiedConditions to satisfiedConditions + 1
-					else if (matchResult's class is record)
-						odebug("[" & name & "]" & "Task meets conditions: " & matchResult's passesCriteria)
-						if (matchResult's passesCriteria) then
+						if (aMatchResult) then set satisfiedConditions to satisfiedConditions + 1
+					else if (aMatchResult's class is record)
+						odebug("[" & name & "]" & "Task meets conditions: " & aMatchResult's passesCriteria)
+						if (aMatchResult's passesCriteria) then
 							set satisfiedConditions to satisfiedConditions + 1					
-							set inputAttributes to inputAttributes & matchREsult's outputAttributes
+							set inputAttributes to inputAttributes & aMatchResult's outputAttributes
 						end if 
 					end 
 				end repeat
@@ -688,23 +689,347 @@ on makeBooleanSpecificationBuilder(aBooleanStrategy)
 	return BooleanSpecificationBuilder
 end makeBooleanSpecificationBuilder
 
-on makeTextMatchPatternConditionBuilder(aTextStrategy)
+script HolisticGroupingPolicy
+	on processItem(regex)
+		return regex
+	end processItem
+	
+	on processCustomTextItem(regex)
+		return regex
+	end processItem
+
+	on processAll(regex)
+		return "(" & regex & ")"
+	end processAll
+end script
+
+script ItemGroupingPolicy
+	on processItem(regex)
+		return regex
+	end processItem
+
+	on processCustomTextItem(regex)
+		return "(" & regex & ")"
+	end processItem
+
+	on processAll(regex)
+		return regex
+	end processAll
+end script
+
+
+on makeCustomTextBuilder(inputAttributes_map, attribute_name, aTextStrategy, isMatch_boolean)
+	script CustomTextBuilder
+		property parent : makeTextMatchPatternConditionBuilder(inputAttributes_map, missing value, aTextStrategy, isMatch_boolean, HolisticGroupingPolicy)
+		property tokenName : attribute_name
+		
+		on getContents()
+			set regex_text to my regex
+			set index_list to my customTextIndex_list
+			
+			script CustomTextBuilderSpecification
+				property parent : ddd's DefaultSpecification
+				
+				on isSatisfiedBy(task_entity)
+					set matching_text to aTextStrategy's getValue(task_entity)
+					set match_list to textutil's getMatch(matching_text, regex_text)
+					set match to (count of match_list > 0)
+					
+					if (match)
+						set matchedValue to first item of match_list
+						repeat with i in index_list
+							set matchedValue to item ((item 1 of i)+1) of match_list
+							set tokenName to item 2 of i
+							inputAttributes_map's putValue(tokenName, matchedValue)
+						end repeat
+						inputAttributes_map's putValue(tokenName, matchedValue)
+					end if 
+					
+					return match
+				end isSatisfiedBy	
+			end script
+
+			local aSpec
+			if (isMatch_boolean)
+				set aSpec to CustomTextBuilderSpecification
+			else 
+				set aSpec to CustomTextBuilderSpecification's notSpec()
+			end if
+			return aSpec
+			
+		end getContents
+	end script
+	
+	return CustomTextBuilder
+end makeCustomTextBuilder
+
+on makeCustomDateBuilder(pInputAttributes, pToken_name, pValueRetreivalStrategy, pIsMatch)
+	script CustomDateBuilder
+		property tokenName : pToken_name
+		property regex : ""
+		property expressionCounter : 0
+		property customTextIndex_list : { }
+		property aTextStrategy : pValueRetreivalStrategy
+		property groupingPolicy : HolisticGroupingPolicy
+		property isMatch_boolean : pIsMatch
+		property inputAttributes_map : pInputAttributes
+	
+		on token(tokenName)
+			set my tokenName to tokenName
+		end token
+		
+		on aShortDate()
+			set regex to¬
+				"[[:digit:]]{4}[-][[:digit:]]{2}[-][[:digit:]]{2}" 
+(*)	
+			set regex to ¬
+				"(?#Calandar from January 1st 1 A.D to December 31, 9999 )(?# in yyyy-mm-dd format )¬
+				(?!¬
+					(?:1582[:digit:]10[:digit:](?:0?[5-9]|1[0-4]))|¬
+					(?#Missing days from 1582 )
+					(?:1752[:digit:]0?9[:digit:](?:0?[3-9]|1[0-3]))
+					(?#or Missing days from 1752 )
+					(?# both sets of missing days should not be in the same calendar so remove one or the other)
+				)
+				(?n:^(?=[:digit:])¬
+					(?# the character at the beginning a the string must be a digit )
+					(
+						(?'year'[:digit:]{4})(?'sep'[-./])¬
+						(?'month'0?[1-9]|1[012])¬
+							\\k'sep'(?'day'(?<!(?:0?[469]|11).)31|(?<!0?2.)30|2[0-8]|1[:digit:]|0?[1-9]|¬
+								(?# if feb 29th check for valid leap year )¬
+									(?:¬
+										(?<=¬
+											(?!¬
+												(?#exclude these years from leap year pattern ) 000[04]¬
+												(?#No year 0 and no leap year in year 4 )|(?:(?:1[^0-6]|[2468][^048]|[3579][^26])00)¬
+												(?# centurial years > 1500 not evenly divisible by 400 are not leap year)¬
+											)¬
+											(?:¬
+												(?:[:digit:][:digit:])¬
+												(?# century)¬
+												(?:[02468][048]|[13579][26])¬
+												(?#leap years)¬
+											)
+											\\k'sep'(?:0?2)\\k'sep')|¬
+											(?# else if not Feb 29 )(?<!\\k'sep'(?:0?2)\\k'sep')¬
+											(?# and day not Feb 30 or 31 )¬
+									)29)
+						(?(?=[:digitx:]{2}[:digit:])[:digitx:]{2}|$)¬
+					)?¬
+					(?# if there is a space followed by a digit check for time )¬
+					(?<time>¬
+						((?# 12 hour format )(0?[1-9]|1[012])(?# hours )(:[0-5][:digit:]){0,2}¬
+								(?# optional minutes and seconds )(?i:[:digitx:]{2}[AP]M)¬
+								(?# required AM or PM ))|(?# 24 hour format )([01][:digit:]|2[0-3])(?#hours )(:[0-5][:digit:]){1,2}¬
+					)¬
+					(?#required minutes optional seconds )?$¬
+				)"*)
+			return me
+		end 
+
+		on aDay(pPattern_text)
+			local digits
+			if pPattern_text is "dd" then
+				set digits to "{1,2}"
+			else if pPattern_text is "_dd_"
+				set digits to "{2}"
+			else 
+				error "Only acccepts 'dd' (no padding) or '_dd_' (zero padding)"
+			end if
+			
+			set regex to regex & groupingPolicy's processItem("[[:digit:]]" & digits)
+			set expressionCounter to expressionCounter + 1
+--			set end of customTextIndex_list to { expressionCounter, pPattern_text }
+
+			return me
+		end aDay
+	
+		on aMonth(pPattern_text)
+			local digits
+			if pPattern_text is "mm" then
+				set digits to "{1,2}"
+			else if pPattern_text is "_mm_"
+				set digits to "{2}"
+			else 
+				error "Only acccepts 'mm' (no padding) or '_mm_' (zero padding)"
+			end if
+			
+			set regex to regex & groupingPolicy's processItem("[[:digit:]]" & digits)
+			set expressionCounter to expressionCounter + 1
+--			set end of customTextIndex_list to { expressionCounter, pPattern_text }
+			return me
+			
+		end aMonth
+	
+		on aYear(pPattern_text)
+			local digits
+			if pPattern_text is "yy" then
+				set digits to "{2}"
+			else if pPattern_text is "yyyy"
+				set digits to "{4}"
+			else 
+				error "Only acccepts 'yy' or 'yyyy' (zero padding)"
+			end if
+			
+			set regex to regex & groupingPolicy's processItem("[[:digit:]]" & digits)
+			set expressionCounter to expressionCounter + 1
+--			set end of customTextIndex_list to { expressionCounter, pPattern_text }
+					
+			return me
+		end aYear
+	
+		on anHour(pPattern_text)
+			local digits
+			if pPattern_text is "hh" then
+				set digits to "{1,2}"
+			else if pPattern_text is "_hh_" then
+				set digits to "{2}"
+			else if pPattern_text is "HH" then
+				set digits to "{1,2}"
+			else if pPattern_text is "_HH_" then
+				set digits to "{2}"
+			else 
+				error "Only acccepts 'hh' or 'HH' (no padding) or '_hh_' or '_HH_' (zero padding)"
+			end if
+			
+			set regex to regex & groupingPolicy's processItem("[[:digit:]]" & digits)
+			set expressionCounter to expressionCounter + 1
+			set end of customTextIndex_list to { expressionCounter, pPattern_text }
+			return me
+		end anHour
+	
+		on aMinute(pPattern_text)
+			local digits
+			if pPattern_text is "MM" then
+				set digits to "{1,2}"
+			else if pPattern_text is "_MM_" then
+				set digits to "{2}"
+			else 
+				error "Only acccepts 'MM' (no padding) or '_MM_' (zero padding)"
+			end if
+			
+			set regex to regex & groupingPolicy's processItem("[[:digit:]]" & digits)
+			set expressionCounter to expressionCounter + 1
+			set end of customTextIndex_list to { expressionCounter, pPattern_text }
+			return me
+		end aMinute
+	
+		on aSecond(pPattern_text)
+			local digits
+			if pPattern_text is "ss" then
+				set digits to "{1,2}"
+			else if pPattern_text is "_ss_" then
+				set digits to "{2}"
+			else 
+				error "Only acccepts 'ss' (no padding) or '_ss_' (zero padding)"
+			end if
+			
+			set regex to regex & groupingPolicy's processItem("[[:digit:]]" & digits)
+			set expressionCounter to expressionCounter + 1
+			set end of customTextIndex_list to { expressionCounter, pPattern_text }
+			return me
+		end aSecond
+		
+		on AMPM()
+			set regex to regex & groupingPolicy's processItem("[[:alpha:]]{2}")
+			set expressionCounter to expressionCounter + 1
+			set end of customTextIndex_list to { expressionCounter, "ampm" }
+			return me
+		end AMPM
+		
+		on aTimeZone(pPattern_text)
+		end aTimeZone
+		
+		on l(literal_text)
+			set regex to regex & groupingPolicy's processItem(literal_text)
+			
+			return me			
+		end l
+	
+		on anyText()
+			set regex to regex & groupingPolicy's processItem(".*")
+
+			return me
+			
+		end anyText
+	
+		on getContents()
+			set regex_text to my regex
+			set index_list to my customTextIndex_list
+			
+			script CustomDateBuilderSpecification
+				property parent : ddd's DefaultSpecification
+				
+				on isSatisfiedBy(task_entity)
+					set matching_text to aTextStrategy's getValue(task_entity)
+					set match_list to textutil's getMatch(matching_text, regex_text)
+					set match to (count of match_list > 0)
+					
+					if (match)
+						set matchedValue to first item of match_list
+						inputAttributes_map's putValue(tokenName, date matchedValue)
+						
+						repeat with i in index_list
+							set matchedValue to item ((item 1 of i)+1) of match_list
+							set tokenName to item 2 of i
+							inputAttributes_map's putValue(tokenName, date matchedValue)
+						end repeat
+					end if 
+					
+					return match
+				end isSatisfiedBy	
+			end script
+
+			local aSpec
+			if (isMatch_boolean)
+				set aSpec to CustomDateBuilderSpecification
+			else 
+				set aSpec to CustomDateBuilderSpecification's notSpec()
+			end if
+			return aSpec
+			
+		end getContents
+	end script
+	return CustomDateBuilder
+end makeCustomDateBuilder
+
+on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy, isMatch_boolean, aGroupingPolicy)
 	if (aTextStrategy is missing value) then error "Can't create a TextMatchPatternConditionBuilder without a text strategy."
 	
 	set builders_list to { }
 	set regex_text to ""
+	set attrs to { }
+	set aCustomTextIndex_list to { }
+	set anExpressionCounter to 0
+	
 	script TextMatchPatternConditionBuilder
+		property originatingBuilder : aBuilder
+		property isMatch : isMatch_boolean
 		property textStrategy : aTextStrategy
 		property builders : builders_list
 		property regex : regex_text
+		property custom_token_builders : { }
+		property attribute_list : attrs
+		property groupingPolicy : aGroupingPolicy
+		property expressionCounter : anExpressionCounter
+		property customTextIndex_list : aCustomTextIndex_list
+		property inputAttributes_map : inputAttributes
+		
+		on attributes()
+			return attribute_list
+		end attributes
 	
 		on aLetter()
-			set regex to regex & "[[:alpha:]]{1}"
+			set regex to regex & groupingPolicy's processItem("[[:alpha:]]{1}")
+--			set expressionCounter to expressionCounter + 1
+			
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(obj as text)
-							return textutil's doesMatch(obj, "[[:alpha:]]{1}")
+						on isSatisfiedBy(task_entity)
+							set matching_text to textStrategy's getValue(task_entity)
+							return textutil's doesMatch(matching_text, "[[:alpha:]]{1}")
 						end isSatisfiedBy
 					end script
 				end getContents
@@ -716,12 +1041,15 @@ on makeTextMatchPatternConditionBuilder(aTextStrategy)
 		end aLetter
 	
 		on aDigit()
-			set regex to regex & "[[:digit:]]{1}"
+			set regex to regex & groupingPolicy's processItem("[[:digit:]]{1}")
+--			set expressionCounter to expressionCounter + 1
+			
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(obj as text)
-							return textutil's doesMatch(obj, "[[:digit:]]{1}")
+						on isSatisfiedBy(task_entity)
+							set matching_text to textStrategy's getValue(task_entity)
+							return textutil's doesMatch(matching_text, "[[:digit:]]{1}")
 						end isSatisfiedBy
 					end script
 				end getContents
@@ -733,11 +1061,15 @@ on makeTextMatchPatternConditionBuilder(aTextStrategy)
 		end aDigit
 	
 		on letterOrDigit()
+			set regex to regex & groupingPolicy's processItem("[[:alnum:]]{1}")
+--			set expressionCounter to expressionCounter + 1
+			
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(obj as text)
-							return textutil's doesMatch(obj, "[[:alnum:]]{1}")
+						on isSatisfiedBy(task_entity)
+							set matching_text to textStrategy's getValue(task_entity)
+							return textutil's doesMatch(matching_text, "[[:alnum:]]{1}")
 						end isSatisfiedBy
 					end script
 				end getContents
@@ -750,18 +1082,35 @@ on makeTextMatchPatternConditionBuilder(aTextStrategy)
 		end letterOrDigit
 	
 		on aSymbol()
-			return me
-		end aSymbol
-	
-		on customDate()
-		end customDate
-	
-		on aWord()
+			set regex to regex & groupingPolicy's processItem("[[:punct:]]{1}")
+--			set expressionCounter to expressionCounter + 1
+			
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(obj as text)
-							return textutil's doesMatch(obj, "[[:word:]]{1}")
+						on isSatisfiedBy(task_entity)
+							set matching_text to textStrategy's getValue(task_entity)
+							return textutil's doesMatch(matching_text, "[[:punct:]]{1}")
+						end isSatisfiedBy
+					end script
+				end getContents
+			end script
+		
+			set end of builders to the result
+		
+			return me
+		end aSymbol
+	
+		on aWord()
+			set regex to regex & groupingPolicy's processItem("[[:alpha:]]{1,}")
+--			set expressionCounter to expressionCounter + 1
+			
+			script 
+				on getContents()
+					script 
+						on isSatisfiedBy(task_entity)
+							set matching_text to textStrategy's getValue(task_entity)
+							return textutil's doesMatch(matching_text, "[[:alpha:]]{1,}")
 						end isSatisfiedBy
 					end script
 				end getContents
@@ -774,11 +1123,16 @@ on makeTextMatchPatternConditionBuilder(aTextStrategy)
 		end aWord
 	
 		on aNumber()
+			set regex to regex & groupingPolicy's processItem("[[:digit:]]{1,}")
+--			set expressionCounter to expressionCounter + 1
+			
+			
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(obj as text)
-							return textutil's doesMatch(obj, "[[:xdigit:]]{1}")
+						on isSatisfiedBy(task_entity)
+							set matching_text to textStrategy's getValue(task_entity)
+							return textutil's doesMatch(matching_text, "[[:digit:]]{1,}")
 						end isSatisfiedBy
 					end script
 				end getContents
@@ -791,79 +1145,163 @@ on makeTextMatchPatternConditionBuilder(aTextStrategy)
 		end aNumber
 	
 		on lettersAndDigits()
+			set regex to regex & groupingPolicy's processItem("[[:alnum:]]{1,}")
+--			set expressionCounter to expressionCounter + 1
+			
+			
+			script 
+				on getContents()
+					script 
+						on isSatisfiedBy(task_entity)
+							set matching_text to textStrategy's getValue(task_entity)
+							return textutil's doesMatch(matching_text, "[[:alnum:]]{1,}")
+						end isSatisfiedBy
+					end script
+				end getContents
+			end script
+		
+			set end of builders to the result
+		
+			return me
 		end lettersAndDigits
 	
 		on symbols()
+			set regex to regex & groupingPolicy's processItem("[[:punct:]]{1,}")
+--			set expressionCounter to expressionCounter + 1
+			
+			
+			script 
+				on getContents()
+					script 
+						on isSatisfiedBy(task_entity)
+							set matching_text to textStrategy's getValue(task_entity)
+							return textutil's doesMatch(matching_text, "[[:punct:]]{1,}")
+						end isSatisfiedBy
+					end script
+				end getContents
+			end script
+
+			set end of builders to the result
+
+			return me
 		end symbols
 	
-		on customText()
+		on customText(token_builder)
+			set end of custom_token_builders to token_builder
+			set regex to regex & groupingPolicy's processCustomTextItem(token_builder's regex)
+			set expressionCounter to expressionCounter + 1
+			set end of customTextIndex_list to { expressionCounter, token_builder's tokenName, "TEXT" }
+			
+			return me
 		end customText
+
+		on customDate(token_builder)
+			set end of custom_token_builders to token_builder
+			set regex to regex & groupingPolicy's processCustomTextItem(token_builder's regex)
+			set expressionCounter to expressionCounter + 1
+			set end of customTextIndex_list to { expressionCounter, token_builder's tokenName, "DATE" }
+			
+			return me
+		end customDate
 	
 		on anyText()
+			set regex to regex & groupingPolicy's processItem(".*")
+--			set expressionCounter to expressionCounter + 1
+			
+			script 
+				on getContents()
+					script 
+						on isSatisfiedBy(task_entity)
+							set matching_text to textStrategy's getValue(task_entity)
+							return textutil's doesMatch(matching_text, ".*")
+						end isSatisfiedBy
+					end script
+				end getContents
+			end script
+
+			set end of builders to the result
+
+			return me
 		end anyText
 	
-		on textString()
-		end textString
-	
-		on getContents()
-			set aSpec to ddd's DefaultSpecification
-		
-			repeat with aBuilder in builders
-				set aSpec to aSpec's andSpec(aBuilder's getContents())
-			end repeat
-		
+		on l(literal_text)
+			set regex to regex & groupingPolicy's processItem(literal_text)
+--			set expressionCounter to expressionCounter + 1
+			
 			script 
-				on isSatisfiedBy(obj as text)
-					return textutil's doesMatch(obj, regex)
+				on getContents()
+					script 
+						on isSatisfiedBy(task_entity)
+							set matching_text to textStrategy's getValue(task_entity)
+							return textutil's doesMatch(matching_text, literal_text)
+						end isSatisfiedBy
+					end script
+				end getContents
+			end script
+
+			set end of builders to the result
+
+			return me			
+		end l
+			
+		on getContents()
+--			set aSpec to originatingBuilder's getContents()
+			
+(*						
+			set mySpec to ddd's DefaultSpecification
+			repeat with aBuilder in builders
+				set mySpec to mySpec's andSpec(aBuilder's getContents())
+			end repeat
+*)		
+			
+			
+			script TextMatchPatternCondition
+				property parent : ddd's DefaultSpecification
+				on isSatisfiedBy(task_entity)
+					set matching_text to textStrategy's getValue(task_entity)
+					
+					set match to textutil's doesMatch(matching_text, regex)
+					
+					if (match)
+						set match_list to textutil's getMatch(matching_text, regex)
+					
+						repeat with i in customTextIndex_list
+							set matchedValue to item ((item 1 of i)+1) of match_list
+							set tokenName to item 2 of i
+							set tokenType to item 3 of i
+							if (tokenType is "DATE")
+								set matchedValue to date matchedValue
+							end
+							inputAttributes_map's putValue(tokenName, matchedValue)
+							log "Added entry to inputAttributes. key: " & tokenName & ", value: " & matchedValue
+						end repeat
+					end if 
+					
+					return match
 				end isSatisfiedBy
 			end script
-		
-			return the result
+			
+			local aSpec
+			if (isMatch)
+				set aSpec to TextMatchPatternCondition
+			else 
+				set aSpec to TextMatchPatternCondition's notSpec()
+			end if
+			return aSpec
 		end getContents
 	end script --TextMatchPatternConditionBuilder	
 	return TextMatchPatternConditionBuilder
 end makeTextMatchPatternConditionBuilder
 
-on makeCustomTokenBuilder()
-	script CustomTokenBuilder
-		property tokenName : missing value
-	
-		on token(tokenName)
-			set my tokenName to tokenName
-		end token
-
-		on aDay()
-		end aDay
-	
-		on aMonth()
-		end aMonth
-	
-		on aYear()
-		end aYear
-	
-		on anHour()
-		end anHour
-	
-		on aMinute()
-		end aMinute
-	
-		on aSecond()
-		end aSecond
-	
-		on anyText()
-		end anyText
-	
-		on textString()
-		end textString
-	end script
-	return CustomTokenBuilder
-end makeCustomTokenBuilder
-
 on makeTextSpecificationBuilder(aTextStrategy)
 	if (aTextStrategy is missing value) then error "Text strategy is missing."
 	
+	set theBuilders to { }
+	
 	script TextSpecificationBuilder
 		property textStrategy : aTextStrategy
+		
+		property builder_list : theBuilders
 
 		property sameAsText : missing value
 		property notSameAsText : missing value
@@ -873,7 +1311,9 @@ on makeTextSpecificationBuilder(aTextStrategy)
 		property notEndingWithText : missing value
 		property containedText : missing value
 		property notContainedText : missing value
-		property pattern : missing value
+		property matchBuilder : missing value
+		property doesNotMatchBuilder : missing value
+		property inputAttributes : collections's makeMap()
 
 		on sameAs(referenceText as text)
 			set sameAsText to referenceText
@@ -916,8 +1356,13 @@ on makeTextSpecificationBuilder(aTextStrategy)
 		end doesNotContain
 	
 		on match()
-			set aBuilder to makeTextMatchPatternConditionBuilder(textStrategy)
-			return aBuilder
+			set matchBuilder to makeTextMatchPatternConditionBuilder(inputAttributes, me, textStrategy, true, ItemGroupingPolicy)
+			return matchBuilder
+		end match
+
+		on doesNotMatch()
+			set doesNotMatchBuilder to makeTextMatchPatternConditionBuilder(inputAttributes, me, textStrategy, false, ItemGroupingPolicy)
+			return doesNotMatchBuilder
 		end match
 	
 		on getContents()
@@ -931,6 +1376,8 @@ on makeTextSpecificationBuilder(aTextStrategy)
 			if (notEndingWithText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeEndsWithTextSpecification(notEndingWithText, textStrategy)'s notSpec())
 			if (containedText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeContainsTextSpecification(containedText, textStrategy))
 			if (notContainedText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeContainsTextSpecification(notContainedText, textStrategy)'s notSpec())
+			if (matchBuilder is not missing value) then set aCondition to aCondition's andSpec(matchBuilder's getContents())
+			if (doesNotMatchBuilder is not missing value) then set aCondition to aCondition's andSpec(doesNotMatchBuilder's getContents())
 		
 			return aCondition
 		end getContents
@@ -1495,6 +1942,8 @@ on makeRuleBase()
 		property commandBuilder : missing value
 		property completeConditionBuilder : missing value
 		property flagConditionBuilder : missing value
+		
+		--Context variables
 	
 		on any()
 		end any
@@ -1562,6 +2011,15 @@ on makeRuleBase()
 		on markCompleted()
 			return domain's CommandFactory's makeMarkCompleteCommand()
 		end markCompleted
+		
+		on dateAttr(pName)
+			return makeCustomDateBuilder(collections's makeMap(), pName, TaskNameRetrievalStrategy, true)
+		end dateAttr
+		
+		on textAttr(pName)
+			return makeCustomTextBuilder(collections's makeMap(), pName, TaskNameRetrievalStrategy, true)
+		end textAttr
+		
 		
 		on getContents()
 			set aSpec to ddd's DefaultSpecification
