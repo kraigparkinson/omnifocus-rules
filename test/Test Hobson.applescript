@@ -240,8 +240,8 @@ script |TextSpecification|
 		
 		set actual to "a matching task"
 
-		assert(rules's SpecificationFactory's makeSameAsTextSpecification("a matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should be the same")
-		refute(rules's SpecificationFactory's makeSameAsTextSpecification("not a matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should not be the same")
+		assert(rules's SpecificationFactory's makeSameAsTextSpecification("a matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should be the same")
+		refute(rules's SpecificationFactory's makeSameAsTextSpecification("not a matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should not be the same")
 	end script
 
 	script |Should find starts with text|
@@ -249,9 +249,9 @@ script |TextSpecification|
 		
 		set actual to "a matching task"
 
-		assert(rules's SpecificationFactory's makeStartsWithTextSpecification("a", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should start with letter")
-		assert(rules's SpecificationFactory's makeStartsWithTextSpecification("a matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should start with whole phrase")
-		refute(rules's SpecificationFactory's makeStartsWithTextSpecification("matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should not start with end of phrase")
+		assert(rules's SpecificationFactory's makeStartsWithTextSpecification("a", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should start with letter")
+		assert(rules's SpecificationFactory's makeStartsWithTextSpecification("a matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should start with whole phrase")
+		refute(rules's SpecificationFactory's makeStartsWithTextSpecification("matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should not start with end of phrase")
 	end script
 
 	script |Should find ends with text|
@@ -259,10 +259,10 @@ script |TextSpecification|
 		
 		set actual to "a matching task"
 
-		assert(rules's SpecificationFactory's makeEndsWithTextSpecification("k", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should end with last letter")
-		assert(rules's SpecificationFactory's makeEndsWithTextSpecification("task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should end with last word")
-		assert(rules's SpecificationFactory's makeEndsWithTextSpecification("a matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should end with whole phrase")
-		refute(rules's SpecificationFactory's makeEndsWithTextSpecification("a matching", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should not end with start of phrase")
+		assert(rules's SpecificationFactory's makeEndsWithTextSpecification("k", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should end with last letter")
+		assert(rules's SpecificationFactory's makeEndsWithTextSpecification("task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should end with last word")
+		assert(rules's SpecificationFactory's makeEndsWithTextSpecification("a matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should end with whole phrase")
+		refute(rules's SpecificationFactory's makeEndsWithTextSpecification("a matching", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should not end with start of phrase")
 	end script
 
 	script |Should find contained text|
@@ -270,13 +270,13 @@ script |TextSpecification|
 		
 		set actual to "a matching task"
 
-		assert(rules's SpecificationFactory's makeContainsTextSpecification("k", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should contain last letter")
-		assert(rules's SpecificationFactory's makeContainsTextSpecification("task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should contain last word")
-		assert(rules's SpecificationFactory's makeContainsTextSpecification("matching", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should contain middle word")
-		assert(rules's SpecificationFactory's makeContainsTextSpecification("a", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should contain first word")
-		assert(rules's SpecificationFactory's makeContainsTextSpecification("a matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should contain whole phrase")
-		refute(rules's SpecificationFactory's makeContainsTextSpecification(" a matching task ", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should not be the same")
-		refute(rules's SpecificationFactory's makeContainsTextSpecification("other", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Text should not be the same")
+		assert(rules's SpecificationFactory's makeContainsTextSpecification("k", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should contain last letter")
+		assert(rules's SpecificationFactory's makeContainsTextSpecification("task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should contain last word")
+		assert(rules's SpecificationFactory's makeContainsTextSpecification("matching", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should contain middle word")
+		assert(rules's SpecificationFactory's makeContainsTextSpecification("a", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should contain first word")
+		assert(rules's SpecificationFactory's makeContainsTextSpecification("a matching task", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should contain whole phrase")
+		refute(rules's SpecificationFactory's makeContainsTextSpecification(" a matching task ", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should not be the same")
+		refute(rules's SpecificationFactory's makeContainsTextSpecification("other", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Text should not be the same")
 	end script
 end script --TextSpecification
 
@@ -294,8 +294,8 @@ script |DateSpecification|
 		
 		set actual to date "2016-01-02"
 
-		assert(rules's SpecificationFactory's makeSameAsDateSpecification(date "2016-01-02", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Date should be the same")
-		refute(rules's SpecificationFactory's makeSameAsDateSpecification(date "2015-01-02", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Date should not be the same")
+		assert(rules's SpecificationFactory's makeSameAsDateSpecification(date "2016-01-02", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Date should be the same")
+		refute(rules's SpecificationFactory's makeSameAsDateSpecification(date "2015-01-02", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Date should not be the same")
 	end script
 
 	script |Should find before date|
@@ -303,9 +303,9 @@ script |DateSpecification|
 		
 		set actual to date "2016-01-02"
 
-		refute(rules's SpecificationFactory's makeIsBeforeDateSpecification(date "2016-01-01", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Date should be before")
-		refute(rules's SpecificationFactory's makeIsBeforeDateSpecification(date "2016-01-02", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Date should not be before same date")
-		assert(rules's SpecificationFactory's makeIsBeforeDateSpecification(date "2016-01-03", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Date should not be before next date")
+		refute(rules's SpecificationFactory's makeIsBeforeDateSpecification(date "2016-01-01", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Date should be before")
+		refute(rules's SpecificationFactory's makeIsBeforeDateSpecification(date "2016-01-02", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Date should not be before same date")
+		assert(rules's SpecificationFactory's makeIsBeforeDateSpecification(date "2016-01-03", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Date should not be before next date")
 	end script
 
 	script |Should find after date|
@@ -313,9 +313,9 @@ script |DateSpecification|
 		
 		set actual to date "2016-01-02"
 
-		assert(rules's SpecificationFactory's makeIsAfterDateSpecification(date "2016-01-01", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Date should be after")
-		refute(rules's SpecificationFactory's makeIsAfterDateSpecification(date "2016-01-02", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Date should not be after same date")
-		refute(rules's SpecificationFactory's makeIsAfterDateSpecification(date "2016-01-03", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual), "Date should not be after next date")
+		assert(rules's SpecificationFactory's makeIsAfterDateSpecification(date "2016-01-01", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Date should be after")
+		refute(rules's SpecificationFactory's makeIsAfterDateSpecification(date "2016-01-02", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Date should not be after same date")
+		refute(rules's SpecificationFactory's makeIsAfterDateSpecification(date "2016-01-03", rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual, missing value), "Date should not be after next date")
 	end script
 
 	script |Should find dates in the next range|
@@ -324,10 +324,10 @@ script |DateSpecification|
 		local actual
 		set actual to (dateutil's CalendarDateFactory's today at "12:00:00AM")
 
-		assert(rules's SpecificationFactory's makeInTheNextIntervalDateSpecification(1, rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual's asDate()), "Date should be in the next day")
-		assert(rules's SpecificationFactory's makeInTheNextIntervalDateSpecification(7, rules's ValueRetrievalStrategy)'s isSatisfiedBy(((actual's increment by 7)'s asDate()) - 1), "Date should be in the next week")
-		refute(rules's SpecificationFactory's makeInTheNextIntervalDateSpecification(1, rules's ValueRetrievalStrategy)'s isSatisfiedBy((actual's increment by 2)'s asDate()), "Date should not be in the next day")
-		refute(rules's SpecificationFactory's makeInTheNextIntervalDateSpecification(7, rules's ValueRetrievalStrategy)'s isSatisfiedBy((actual's increment by 7)'s asDate()), "Date should not be in the next week")
+		assert(rules's SpecificationFactory's makeInTheNextIntervalDateSpecification(1, rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual's asDate(), missing value), "Date should be in the next day")
+		assert(rules's SpecificationFactory's makeInTheNextIntervalDateSpecification(7, rules's ValueRetrievalStrategy)'s isSatisfiedBy(((actual's increment by 7)'s asDate()) - 1, missing value), "Date should be in the next week")
+		refute(rules's SpecificationFactory's makeInTheNextIntervalDateSpecification(1, rules's ValueRetrievalStrategy)'s isSatisfiedBy((actual's increment by 2)'s asDate(), missing value), "Date should not be in the next day")
+		refute(rules's SpecificationFactory's makeInTheNextIntervalDateSpecification(7, rules's ValueRetrievalStrategy)'s isSatisfiedBy((actual's increment by 7)'s asDate(), missing value), "Date should not be in the next week")
 	end script
 
 	script |Should find dates in the last range|
@@ -336,17 +336,17 @@ script |DateSpecification|
 		local actual
 		set actual to dateutil's CalendarDateFactory's today at "12:00:00AM"
 
-		assert(rules's SpecificationFactory's makeInTheLastIntervalDateSpecification(1, rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual's asDate()), "Date should be in the next day")
-		assert(rules's SpecificationFactory's makeInTheLastIntervalDateSpecification(7, rules's ValueRetrievalStrategy)'s isSatisfiedBy(((actual's increment by -7)'s asDate()) + 1), "Date should be in the last week")
-		refute(rules's SpecificationFactory's makeInTheLastIntervalDateSpecification(1, rules's ValueRetrievalStrategy)'s isSatisfiedBy((actual's increment by -2)'s asDate()), "Date should not be in the last day")
-		refute(rules's SpecificationFactory's makeInTheLastIntervalDateSpecification(7, rules's ValueRetrievalStrategy)'s isSatisfiedBy((actual's increment by -7)'s asDate()), "Date should not be in the last week")
+		assert(rules's SpecificationFactory's makeInTheLastIntervalDateSpecification(1, rules's ValueRetrievalStrategy)'s isSatisfiedBy(actual's asDate(), missing value), "Date should be in the next day")
+		assert(rules's SpecificationFactory's makeInTheLastIntervalDateSpecification(7, rules's ValueRetrievalStrategy)'s isSatisfiedBy(((actual's increment by -7)'s asDate()) + 1, missing value), "Date should be in the last week")
+		refute(rules's SpecificationFactory's makeInTheLastIntervalDateSpecification(1, rules's ValueRetrievalStrategy)'s isSatisfiedBy((actual's increment by -2)'s asDate(), missing value), "Date should not be in the last day")
+		refute(rules's SpecificationFactory's makeInTheLastIntervalDateSpecification(7, rules's ValueRetrievalStrategy)'s isSatisfiedBy((actual's increment by -7)'s asDate(), missing value), "Date should not be in the last week")
 	end script
 
 	script |Should find missing dates|
 		property parent : UnitTest(me)
 		
-		assert(rules's SpecificationFactory's makeMissingDateSpecification(rules's ValueRetrievalStrategy)'s isSatisfiedBy(missing value), "Date should be missing")
-		refute(rules's SpecificationFactory's makeMissingDateSpecification(rules's ValueRetrievalStrategy)'s isSatisfiedBy(current date), "Date should not be missing value")
+		assert(rules's SpecificationFactory's makeMissingDateSpecification(rules's ValueRetrievalStrategy)'s isSatisfiedBy(missing value, missing value), "Date should be missing")
+		refute(rules's SpecificationFactory's makeMissingDateSpecification(rules's ValueRetrievalStrategy)'s isSatisfiedBy(current date, missing value), "Date should not be missing value")
 	end script
 
 
@@ -367,67 +367,67 @@ script |TextSpecificationBuilder|
 	script |Should find same text|
 		property parent : UnitTest(me)
 		
-		assert(builder's sameAs("a matching task")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should be the same (sameAs)")
+		assert(builder's sameAs("a matching task")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should be the same (sameAs)")
 		tell builder to reset()
-		refute(builder's sameAs("not a matching task")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not be the same (sameAs)")
+		refute(builder's sameAs("not a matching task")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not be the same (sameAs)")
 		tell builder to reset()
-		refute(builder's notSameAs("a matching task")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should be the same (notSameAs)")
+		refute(builder's notSameAs("a matching task")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should be the same (notSameAs)")
 		tell builder to reset()
-		assert(builder's notSameAs("not a matching task")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not be the same (notSameAs)")
+		assert(builder's notSameAs("not a matching task")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not be the same (notSameAs)")
 		tell builder to reset()
 	end script
 	
 	script |Should find text starts with|
 		property parent : UnitTest(me)
 		
-		assert(builder's startsWith("a matching")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not start with (startsWith)")
+		assert(builder's startsWith("a matching")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not start with (startsWith)")
 		tell builder to reset()
-		refute(builder's startsWith("matching task")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not start with (startsWith)")
+		refute(builder's startsWith("matching task")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not start with (startsWith)")
 		tell builder to reset()
-		refute(builder's startsWith("matching task")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not start with (startsWith)")
+		refute(builder's startsWith("matching task")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not start with (startsWith)")
 		tell builder to reset()
-		refute(builder's doesNotStartWith("a matching")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should start with (doesNotStartWith)")
+		refute(builder's doesNotStartWith("a matching")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should start with (doesNotStartWith)")
 		tell builder to reset()
-		assert(builder's doesNotStartWith("matching task")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not start with (doesNotStartWith)")
+		assert(builder's doesNotStartWith("matching task")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not start with (doesNotStartWith)")
 		tell builder to reset()
 	end script
 
 	script |Should find text ends with|
 		property parent : UnitTest(me)
 		
-		assert(builder's endsWith("matching task")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not end with (endsWith)")
+		assert(builder's endsWith("matching task")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not end with (endsWith)")
 		tell builder to reset()
-		refute(builder's endsWith("a matching")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not end with (endsWith)")
+		refute(builder's endsWith("a matching")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not end with (endsWith)")
 		tell builder to reset()
-		refute(builder's doesNotEndWith("matching task")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should end with (doesNotEndWith)")
+		refute(builder's doesNotEndWith("matching task")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should end with (doesNotEndWith)")
 		tell builder to reset()
-		assert(builder's doesNotEndWith("a matching")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not end with (doesNotEndWith)")
+		assert(builder's doesNotEndWith("a matching")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not end with (doesNotEndWith)")
 		tell builder to reset()
 	end script
 
 	script |Should find text contains|
 		property parent : UnitTest(me)
 		
-		assert(builder's doesContain("matching")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not end with (endsWith)")
+		assert(builder's doesContain("matching")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not end with (endsWith)")
 		tell builder to reset()
-		refute(builder's doesContain("another")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not end with (endsWith)")
+		refute(builder's doesContain("another")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not end with (endsWith)")
 		tell builder to reset()
-		refute(builder's doesNotContain("matching")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should end with (doesNotEndWith)")
+		refute(builder's doesNotContain("matching")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should end with (doesNotEndWith)")
 		tell builder to reset()
-		assert(builder's doesNotContain("another")'s getContents()'s isSatisfiedBy("a matching task"), "Task name should not end with (doesNotEndWith)")
+		assert(builder's doesNotContain("another")'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should not end with (doesNotEndWith)")
 		tell builder to reset()
 	end script
 	
 	script |Should find text matches|
 		property parent : UnitTest(me)
 		
-		assert(builder's match()'s l("a")'s anyText()'s getContents()'s isSatisfiedBy("a matching task"), "Task name should start with 'a'")
+		assert(builder's match()'s l("a")'s anyText()'s getContents()'s isSatisfiedBy("a matching task", missing value), "Task name should start with 'a'")
 	end script
 	
 	script |Should find text that does not match|
 		property parent : UnitTest(me)
 		
-		assert(builder's doesNotMatch()'s l("a matching task")'s getContents()'s isSatisfiedBy("da matching task"), "Task name should not match")
+		assert(builder's doesNotMatch()'s l("a matching task")'s getContents()'s isSatisfiedBy("da matching task", missing value), "Task name should not match")
 	end script
 end script --TextSpecificationBuilder
 
@@ -438,7 +438,7 @@ script |TextMatchPatternConditionBuilder|
 	
 	on setUp()		
 		set inputAttributes to collections's makeMap()
-		set builderFixture to rules's makeTextMatchPatternConditionBuilder(inputAttributes, missing value, rules's ValueRetrievalStrategy, true, rules's ItemGroupingPolicy)
+		set builderFixture to rules's makeTextMatchPatternConditionBuilder(missing value, rules's ValueRetrievalStrategy, true, rules's ItemGroupingPolicy)
 	end setUp
 	
 	on tearDown()
@@ -448,130 +448,130 @@ script |TextMatchPatternConditionBuilder|
 		property parent : UnitTest(me)
 				
 		set aSpec to builderFixture's aLetter()'s getContents()
-		refute(aSpec's isSatisfiedBy(""), "Should not match empty string.")
-		assert(aSpec's isSatisfiedBy("a"), "Should match with single letter (a).")
-		assert(aSpec's isSatisfiedBy("A"), "Should match with single letter (A).")
-		assert(aSpec's isSatisfiedBy("b"), "Should match with single letter (b).")
-		refute(aSpec's isSatisfiedBy("2"), "Should not match a digit")
-		refute(aSpec's isSatisfiedBy("23"), "Should not match a number")
-		refute(aSpec's isSatisfiedBy("bb"), "Should not match multiple letters.")
+		refute(aSpec's isSatisfiedBy("", inputAttributes), "Should not match empty string.")
+		assert(aSpec's isSatisfiedBy("a", inputAttributes), "Should match with single letter (a).")
+		assert(aSpec's isSatisfiedBy("A", inputAttributes), "Should match with single letter (A).")
+		assert(aSpec's isSatisfiedBy("b", inputAttributes), "Should match with single letter (b).")
+		refute(aSpec's isSatisfiedBy("2", inputAttributes), "Should not match a digit")
+		refute(aSpec's isSatisfiedBy("23", inputAttributes), "Should not match a number")
+		refute(aSpec's isSatisfiedBy("bb", inputAttributes), "Should not match multiple letters.")
 	end script
 
 	script |Should find text that's a whole word|
 		property parent : UnitTest(me)
 				
 		set aSpec to builderFixture's aWord()'s getContents()
-		refute(aSpec's isSatisfiedBy(""), "Should not match empty string.")
-		assert(aSpec's isSatisfiedBy("alphabet"), "Should match with a word.")
-		assert(aSpec's isSatisfiedBy("a"), "Should match with single letter.")
-		refute(aSpec's isSatisfiedBy("2"), "Should match with a single digit")
-		refute(aSpec's isSatisfiedBy("34"), "Should not match a number")
-		assert(aSpec's isSatisfiedBy("bb"), "Should match multiple letters, even if they aren't a word.")
+		refute(aSpec's isSatisfiedBy("", inputAttributes), "Should not match empty string.")
+		assert(aSpec's isSatisfiedBy("alphabet", inputAttributes), "Should match with a word.")
+		assert(aSpec's isSatisfiedBy("a", inputAttributes), "Should match with single letter.")
+		refute(aSpec's isSatisfiedBy("2", inputAttributes), "Should match with a single digit")
+		refute(aSpec's isSatisfiedBy("34", inputAttributes), "Should not match a number")
+		assert(aSpec's isSatisfiedBy("bb", inputAttributes), "Should match multiple letters, even if they aren't a word.")
 	end script
 
 	script |Should find text that's only a digit|
 		property parent : UnitTest(me)
 		
 		set aSpec to builderFixture's aDigit()'s getContents()
-		refute(aSpec's isSatisfiedBy(""), "Should not match empty string.")
-		assert(aSpec's isSatisfiedBy("1"), "Should match with single number (1).")
-		assert(aSpec's isSatisfiedBy("2"), "Should match with single number (2).")
-		refute(aSpec's isSatisfiedBy("b"), "Should not match with single letter (b).")
-		refute(aSpec's isSatisfiedBy("22"), "Should not match multiple numbers.")
+		refute(aSpec's isSatisfiedBy("", inputAttributes), "Should not match empty string.")
+		assert(aSpec's isSatisfiedBy("1", inputAttributes), "Should match with single number (1).")
+		assert(aSpec's isSatisfiedBy("2", inputAttributes), "Should match with single number (2).")
+		refute(aSpec's isSatisfiedBy("b", inputAttributes), "Should not match with single letter (b).")
+		refute(aSpec's isSatisfiedBy("22", inputAttributes), "Should not match multiple numbers.")
 	end script
 
 	script |Should find text that's either a letter or a digit|
 		property parent : UnitTest(me)
 		
 		set aSpec to builderFixture's letterOrDigit()'s getContents()
-		refute(aSpec's isSatisfiedBy(""), "Should not match empty string.")
-		assert(aSpec's isSatisfiedBy("1"), "Should match with single digit (1).")
-		assert(aSpec's isSatisfiedBy("a"), "Should match with single letter (a).")
-		refute(aSpec's isSatisfiedBy("ab"), "Should not match multiple letters.")
-		refute(aSpec's isSatisfiedBy("22"), "Should not match multiple digits.")
+		refute(aSpec's isSatisfiedBy("", inputAttributes), "Should not match empty string.")
+		assert(aSpec's isSatisfiedBy("1", inputAttributes), "Should match with single digit (1).")
+		assert(aSpec's isSatisfiedBy("a", inputAttributes), "Should match with single letter (a).")
+		refute(aSpec's isSatisfiedBy("ab", inputAttributes), "Should not match multiple letters.")
+		refute(aSpec's isSatisfiedBy("22", inputAttributes), "Should not match multiple digits.")
 	end script
 
 	script |Should find text that's a combo of letters and digits|
 		property parent : UnitTest(me)
 		
 		set aSpec to builderFixture's lettersAndDigits()'s getContents()
-		refute(aSpec's isSatisfiedBy(""), "Should not match empty string.")
-		assert(aSpec's isSatisfiedBy("1"), "Should match with single digit (1).")
-		assert(aSpec's isSatisfiedBy("a"), "Should match with single letter (a).")
-		assert(aSpec's isSatisfiedBy("ab"), "Should not match multiple letters.")
-		assert(aSpec's isSatisfiedBy("22"), "Should not match multiple digits.")
-		assert(aSpec's isSatisfiedBy("a2"), "Should not match a letter and digit combo.")
-		assert(aSpec's isSatisfiedBy("1b"), "Should not match a digit and letter combo.")
+		refute(aSpec's isSatisfiedBy("", inputAttributes), "Should not match empty string.")
+		assert(aSpec's isSatisfiedBy("1", inputAttributes), "Should match with single digit (1).")
+		assert(aSpec's isSatisfiedBy("a", inputAttributes), "Should match with single letter (a).")
+		assert(aSpec's isSatisfiedBy("ab", inputAttributes), "Should not match multiple letters.")
+		assert(aSpec's isSatisfiedBy("22", inputAttributes), "Should not match multiple digits.")
+		assert(aSpec's isSatisfiedBy("a2", inputAttributes), "Should not match a letter and digit combo.")
+		assert(aSpec's isSatisfiedBy("1b", inputAttributes), "Should not match a digit and letter combo.")
 	end script
 
 	script |Should find text that's a number|
 		property parent : UnitTest(me)
 		
 		set aSpec to builderFixture's aNumber()'s getContents()
-		refute(aSpec's isSatisfiedBy(""), "Should not match empty string.")
-		assert(aSpec's isSatisfiedBy("1"), "Should match with single number (1).")
-		assert(aSpec's isSatisfiedBy("22"), "Should match with multi-digit number (22).")
-		refute(aSpec's isSatisfiedBy("b"), "Should not match with single letter (b).")
+		refute(aSpec's isSatisfiedBy("", inputAttributes), "Should not match empty string.")
+		assert(aSpec's isSatisfiedBy("1", inputAttributes), "Should match with single number (1).")
+		assert(aSpec's isSatisfiedBy("22", inputAttributes), "Should match with multi-digit number (22).")
+		refute(aSpec's isSatisfiedBy("b", inputAttributes), "Should not match with single letter (b).")
 	end script
 
 	script |Should find text that's only a single symbol|
 		property parent : UnitTest(me)
 		
 		set aSpec to builderFixture's aSymbol()'s getContents()
-		refute(aSpec's isSatisfiedBy(""), "Should not match empty string.")
-		assert(aSpec's isSatisfiedBy("?"), "Should match with single symbol (?).")
-		assert(aSpec's isSatisfiedBy("|"), "Should match with single number (|).")
-		refute(aSpec's isSatisfiedBy("b"), "Should not match with single letter (b).")
-		refute(aSpec's isSatisfiedBy("1"), "Should not match with single digit (1).")
-		refute(aSpec's isSatisfiedBy("??"), "Should not match multiple symbols.")
+		refute(aSpec's isSatisfiedBy("", inputAttributes), "Should not match empty string.")
+		assert(aSpec's isSatisfiedBy("?", inputAttributes), "Should match with single symbol (?).")
+		assert(aSpec's isSatisfiedBy("|", inputAttributes), "Should match with single number (|).")
+		refute(aSpec's isSatisfiedBy("b", inputAttributes), "Should not match with single letter (b).")
+		refute(aSpec's isSatisfiedBy("1", inputAttributes), "Should not match with single digit (1).")
+		refute(aSpec's isSatisfiedBy("??", inputAttributes), "Should not match multiple symbols.")
 	end script
 
 	script |Should find text that's a set of symbols|
 		property parent : UnitTest(me)
 		
 		set aSpec to builderFixture's symbols()'s getContents()
-		refute(aSpec's isSatisfiedBy(""), "Should not match empty string.")
-		assert(aSpec's isSatisfiedBy("?"), "Should match with single symbol (?).")
-		assert(aSpec's isSatisfiedBy("--"), "Should match with multiple symbols (--).")
+		refute(aSpec's isSatisfiedBy("", inputAttributes), "Should not match empty string.")
+		assert(aSpec's isSatisfiedBy("?", inputAttributes), "Should match with single symbol (?).")
+		assert(aSpec's isSatisfiedBy("--", inputAttributes), "Should match with multiple symbols (--).")
 	end script
 	
 	script |Should find literal text|
 		property parent : UnitTest(me)
 				
 		set aSpec to builderFixture's l("[|]EN[|]")'s getContents()
-		refute(aSpec's isSatisfiedBy(""), "Should not match empty string.")
-		refute(aSpec's isSatisfiedBy("alphabet"), "Should not match with a word.")
-		assert(aSpec's isSatisfiedBy("|EN|"), "Should match with text provided.")
-		refute(aSpec's isSatisfiedBy("|EN|EN|"), "Should not match even if text is present")
-		refute(aSpec's isSatisfiedBy("|EN||EN|"), "Should not match when text is present twice")
+		refute(aSpec's isSatisfiedBy("", inputAttributes), "Should not match empty string.")
+		refute(aSpec's isSatisfiedBy("alphabet", inputAttributes), "Should not match with a word.")
+		assert(aSpec's isSatisfiedBy("|EN|", inputAttributes), "Should match with text provided.")
+		refute(aSpec's isSatisfiedBy("|EN|EN|", inputAttributes), "Should not match even if text is present")
+		refute(aSpec's isSatisfiedBy("|EN||EN|", inputAttributes), "Should not match when text is present twice")
 	end script
 
 	script |Should find anything|
 		property parent : UnitTest(me)
 				
 		set aSpec to builderFixture's anyText()'s getContents()
-		assert(aSpec's isSatisfiedBy(""), "Should match empty string.")
-		assert(aSpec's isSatisfiedBy("1"), "Should match digit.")
-		assert(aSpec's isSatisfiedBy("a"), "Should match letter.")
-		assert(aSpec's isSatisfiedBy("?"), "Should match symbox.")
-		assert(aSpec's isSatisfiedBy("alphabet"), "Should match with a word.")
-		assert(aSpec's isSatisfiedBy("|EN|"), "Should match with text with special characters.")
-		assert(aSpec's isSatisfiedBy("123abc"), "Should match letters and digits")
-		assert(aSpec's isSatisfiedBy("123"), "Should not match numbers")
-		assert(aSpec's isSatisfiedBy("abc"), "Should not match a word")
+		assert(aSpec's isSatisfiedBy("", inputAttributes), "Should match empty string.")
+		assert(aSpec's isSatisfiedBy("1", inputAttributes), "Should match digit.")
+		assert(aSpec's isSatisfiedBy("a", inputAttributes), "Should match letter.")
+		assert(aSpec's isSatisfiedBy("?", inputAttributes), "Should match symbox.")
+		assert(aSpec's isSatisfiedBy("alphabet", inputAttributes), "Should match with a word.")
+		assert(aSpec's isSatisfiedBy("|EN|", inputAttributes), "Should match with text with special characters.")
+		assert(aSpec's isSatisfiedBy("123abc", inputAttributes), "Should match letters and digits")
+		assert(aSpec's isSatisfiedBy("123", inputAttributes), "Should not match numbers")
+		assert(aSpec's isSatisfiedBy("abc", inputAttributes), "Should not match a word")
 	end script
 	
 	script |Should find custom text pattern|
 		property parent : UnitTest(me)
 				
-		set t to rules's makeCustomTextBuilder(inputAttributes, "source token", rules's ValueRetrievalStrategy, true)
+		set t to rules's makeCustomTextBuilder("source token", rules's ValueRetrievalStrategy, true)
 		set aSpec to builderFixture's customText(¬
 			t's l("[|]")'s anyText()'s l("[|]")¬
 				)'s getContents()
 		
 		-- NOTE: Below is the one I want to see in practice.
 		-- match by (taskname()'s match()'s customText(token("source token")'s l("[|]")'s anyText()'s l("[|]")))
-		assert(aSpec's isSatisfiedBy("|EN|"), "Should match the token.")
+		assert(aSpec's isSatisfiedBy("|EN|", inputAttributes), "Should match the token.")
 		assert(inputAttributes's containsValue("source token"), "Should contain a value for 'source token'")
 		assertEqual("|EN|", inputAttributes's getValue("source token"))
 	end script
@@ -580,13 +580,13 @@ script |TextMatchPatternConditionBuilder|
 	script |Should find custom date pattern|
 		property parent : UnitTest(me)
 				
-		set t to rules's makeCustomDateBuilder(inputAttributes, "start date", rules's ValueRetrievalStrategy, true)
+		set t to rules's makeCustomDateBuilder("start date", rules's ValueRetrievalStrategy, true)
 		set aSpec to builderFixture's customDate(¬
 			t's aYear("yyyy")'s l("-")'s aMonth("mm")'s l("-")'s aDay("dd")'s l("T")'s anHour("hh")'s l(":")'s aMinute("mm")'s l(":")'s aSecond("ss"))'s getContents()
 		
 		-- NOTE: Below is the one I want to see in practice.
 		-- match by (taskname()'s match()'s customText(token("source token")'s l("[|]")'s anyText()'s l("[|]")))
-		assert(aSpec's isSatisfiedBy("2016-05-12T13:02:12"), "Should match the token.")
+		assert(aSpec's isSatisfiedBy("2016-05-12T13:02:12", missing value), "Should match the token.")
 		assert(inputAttributes's containsValue("start date"), "Should contain a value for 'start date'")
 		set expectedDate to date "2016-05-12"
 		set expectedDate to date "1:02:12pm" of expectedDate
@@ -597,13 +597,13 @@ script |TextMatchPatternConditionBuilder|
 	script |Should find custom 'short date' pattern|
 		property parent : UnitTest(me)
 			
-		set t to rules's makeCustomDateBuilder(inputAttributes, "start date", rules's ValueRetrievalStrategy, true)
+		set t to rules's makeCustomDateBuilder("start date", rules's ValueRetrievalStrategy, true)
 		set aSpec to builderFixture's customDate(¬
 			t's aShortDate())'s getContents()
 	
 		-- NOTE: Below is the one I want to see in practice.
 		-- match by (taskname()'s match()'s customText(token("source token")'s l("[|]")'s anyText()'s l("[|]")))
-		assert(aSpec's isSatisfiedBy("2016-05-12"), "Should match the token.")
+		assert(aSpec's isSatisfiedBy("2016-05-12", inputAttributes), "Should match the token.")
 		assert(inputAttributes's containsValue("start date"), "Should contain a value for 'start date'")
 		set expectedDate to date "2016-05-12"
 --		set expectedDate to date "1:02:12pm" of expectedDate
@@ -616,34 +616,34 @@ script |TextMatchPatternConditionBuilder|
 		property parent : UnitTest(me)
 		
 		set aSpec to builderFixture's aDigit()'s aLetter()'s getContents()
-		refute(aSpec's isSatisfiedBy(""), "Should not match empty string.")
-		assert(aSpec's isSatisfiedBy("1a"), "Should match number and letter.")
-		refute(aSpec's isSatisfiedBy("a1"), "Should not match letter and number.")
-		refute(aSpec's isSatisfiedBy("22"), "Should not match multiple numbers.")
+		refute(aSpec's isSatisfiedBy("", inputAttributes), "Should not match empty string.")
+		assert(aSpec's isSatisfiedBy("1a", inputAttributes), "Should match number and letter.")
+		refute(aSpec's isSatisfiedBy("a1", inputAttributes), "Should not match letter and number.")
+		refute(aSpec's isSatisfiedBy("22", inputAttributes), "Should not match multiple numbers.")
 
 		--Need to reset builder as we're reusing the instance.
 		set builderFixture's builders to { }
 		set builderFixture's regex to ""
 		set aSpec to builderFixture's aSymbol()'s aWord()'s aSymbol()'s anyText()'s getContents()
-		assert(aSpec's isSatisfiedBy("|EN| A task!"), "Should match a pattern as expected when provided by pattern.")
-		refute(aSpec's isSatisfiedBy("--|EN| A task!"), "Should not match the pattern with extra characters in front.")
-		assert(aSpec's isSatisfiedBy("|GC|"), "Should not match initial symbol-word-symbol combo without additional text.")
+		assert(aSpec's isSatisfiedBy("|EN| A task!", inputAttributes), "Should match a pattern as expected when provided by pattern.")
+		refute(aSpec's isSatisfiedBy("--|EN| A task!", inputAttributes), "Should not match the pattern with extra characters in front.")
+		assert(aSpec's isSatisfiedBy("|GC|", inputAttributes), "Should not match initial symbol-word-symbol combo without additional text.")
 
 		--Need to reset builder as we're reusing the instance.
 		set builderFixture's builders to { }
 		set builderFixture's regex to ""
 		set aSpec to builderFixture's l("[|]EN[|]")'s anyText()'s getContents()
-		assert(aSpec's isSatisfiedBy("|EN| A task!"), "Should match a pattern as expected when provided literally.")
-		refute(aSpec's isSatisfiedBy("--|EN| A task!"), "Should not match the pattern with extra characters in front when most text is expressed literally.")
-		assert(aSpec's isSatisfiedBy("|EN|"), "Should match symbol-word-symbol combo without additional text.")
+		assert(aSpec's isSatisfiedBy("|EN| A task!", inputAttributes), "Should match a pattern as expected when provided literally.")
+		refute(aSpec's isSatisfiedBy("--|EN| A task!", inputAttributes), "Should not match the pattern with extra characters in front when most text is expressed literally.")
+		assert(aSpec's isSatisfiedBy("|EN|", inputAttributes), "Should match symbol-word-symbol combo without additional text.")
 
 		--Need to reset builder as we're reusing the instance.
 		set builderFixture's builders to { }
 		set builderFixture's regex to ""
 		set aSpec to builderFixture's anyText()'s l("[|]EN[|]")'s anyText()'s getContents()
-		assert(aSpec's isSatisfiedBy("|EN| A task!"), "Should match a pattern as expected when provided literally with any text in front.")
-		assert(aSpec's isSatisfiedBy("--|EN| A task!"), "Should match the pattern with extra characters in front when most text is expressed literally.")
-		assert(aSpec's isSatisfiedBy("|EN|"), "Should match symbol-word-symbol combo without additional text with any text in front.")
+		assert(aSpec's isSatisfiedBy("|EN| A task!", inputAttributes), "Should match a pattern as expected when provided literally with any text in front.")
+		assert(aSpec's isSatisfiedBy("--|EN| A task!", inputAttributes), "Should match the pattern with extra characters in front when most text is expressed literally.")
+		assert(aSpec's isSatisfiedBy("|EN|", inputAttributes), "Should match symbol-word-symbol combo without additional text with any text in front.")
 
 	end script
 
@@ -664,14 +664,14 @@ script |CustomTextBuilder|
 				
 		set inputAttributes_map to collections's makeMap()
 		set aBuilder to rules's makeCustomTextBuilder(¬
-			inputAttributes_map, "source token", rules's ValueRetrievalStrategy, true)
+			"source token", rules's ValueRetrievalStrategy, true)
 		
 		set aSpec to aBuilder's l("[|]")'s anyText()'s l("[|]")'s getContents()
 		
 		-- NOTE: Below is the one I want to see in practice.
 		-- match by (taskname()'s match()'s customText(token("source token")'s l("[|]")'s anyText()'s l("[|]")))
 
-		assert(aSpec's isSatisfiedBy("|EN|"), "Should match the token.")
+		assert(aSpec's isSatisfiedBy("|EN|", inputAttributes_map), "Should match the token.")
 		assert(inputAttributes_map's containsValue("source token"), "Should contain a value for 'source token'")
 		assertEqual("|EN|", inputAttributes_map's getValue("source token"))
 	end script
@@ -693,13 +693,13 @@ script |CustomDateBuilder|
 				
 		set inputAttributes_map to collections's makeMap()
 		set aBuilder to rules's makeCustomDateBuilder(¬
-			inputAttributes_map, "start date/time", rules's ValueRetrievalStrategy, true)
+			"start date/time", rules's ValueRetrievalStrategy, true)
 
 		set aSpec to aBuilder's aShortDate()'s getContents()
 
-		assert(aSpec's isSatisfiedBy("2006-02-01"), "Should match the token.")
-		refute(aSpec's isSatisfiedBy("2006-2-1"), "Should not match the token (needs zeros).")
-		refute(aSpec's isSatisfiedBy("1/2/2006"), "Should not match with wrong formatting.")
+		assert(aSpec's isSatisfiedBy("2006-02-01", inputAttributes_map), "Should match the token.")
+		refute(aSpec's isSatisfiedBy("2006-2-1", inputAttributes_map), "Should not match the token (needs zeros).")
+		refute(aSpec's isSatisfiedBy("1/2/2006", inputAttributes_map), "Should not match with wrong formatting.")
 		assert(inputAttributes_map's containsValue("start date/time"), "Should contain a value for 'source token'")
 		assertEqual(date "2006-02-01", inputAttributes_map's getValue("start date/time"))
 	end script
@@ -709,14 +709,14 @@ script |CustomDateBuilder|
 				
 		set inputAttributes_map to collections's makeMap()
 		set aBuilder to rules's makeCustomDateBuilder(¬
-			inputAttributes_map, "start date/time", rules's ValueRetrievalStrategy, true)
+			"start date/time", rules's ValueRetrievalStrategy, true)
 
 		set aSpec to aBuilder's ¬
 			aYear("yyyy")'s l("[-]")'s aMonth("_mm_")'s l("[-]")'s aDay("_dd_")'s getContents()
 
-		assert(aSpec's isSatisfiedBy("2006-02-01"), "Should match the token.")
-		refute(aSpec's isSatisfiedBy("2006-2-1"), "Should not match the token (needs zeros).")
-		refute(aSpec's isSatisfiedBy("1/2/2006"), "Should not match with wrong formatting.")
+		assert(aSpec's isSatisfiedBy("2006-02-01", inputAttributes_map), "Should match the token.")
+		refute(aSpec's isSatisfiedBy("2006-2-1", inputAttributes_map), "Should not match the token (needs zeros).")
+		refute(aSpec's isSatisfiedBy("1/2/2006", inputAttributes_map), "Should not match with wrong formatting.")
 		assert(inputAttributes_map's containsValue("start date/time"), "Should contain a value for 'source token'")
 		assertEqual(date "2006-02-01", inputAttributes_map's getValue("start date/time"))
 	end script
@@ -726,14 +726,14 @@ script |CustomDateBuilder|
 				
 		set inputAttributes_map to collections's makeMap()
 		set aBuilder to rules's makeCustomDateBuilder(¬
-			inputAttributes_map, "start date/time", rules's ValueRetrievalStrategy, true)
+			"start date/time", rules's ValueRetrievalStrategy, true)
 
 		set aSpec to aBuilder's ¬
 			aYear("yyyy")'s l("[-]")'s aMonth("mm")'s l("[-]")'s aDay("dd")'s getContents()
 
-		assert(aSpec's isSatisfiedBy("2006-02-01"), "Should match the token (nothing wrong with zeros).")
---		assert(aSpec's isSatisfiedBy("2006-2-1"), "Should match the token (needs zeros).")
-		refute(aSpec's isSatisfiedBy("2/1/2006"), "Should not match with wrong formatting.")
+		assert(aSpec's isSatisfiedBy("2006-02-01", inputAttributes_map), "Should match the token (nothing wrong with zeros).")
+--		assert(aSpec's isSatisfiedBy("2006-2-1", inputAttributes_map), "Should match the token (needs zeros).")
+		refute(aSpec's isSatisfiedBy("2/1/2006", inputAttributes_map), "Should not match with wrong formatting.")
 		assert(inputAttributes_map's containsValue("start date/time"), "Should contain a value for 'source token'")
 		assertEqual(date "2006-02-01", inputAttributes_map's getValue("start date/time"))
 	end script
@@ -744,14 +744,14 @@ script |CustomDateBuilder|
 				
 		set inputAttributes_map to collections's makeMap()
 		set aBuilder to rules's makeCustomDateBuilder(¬
-			inputAttributes_map, "start date/time", rules's ValueRetrievalStrategy, true)
+			"start date/time", rules's ValueRetrievalStrategy, true)
 
 		set aSpec to aBuilder's ¬
 			anHour("_hh_")'s l(":")'s aMinute("_MM_")'s l(":")'s aSecond("_ss_")'s AMPM()'s getContents()
 				
-		assert(aSpec's isSatisfiedBy("01:01:30pm"), "Should match the token.")
-		refute(aSpec's isSatisfiedBy("1:01:30"), "Should not match the token (needs zeros).")
-		refute(aSpec's isSatisfiedBy("1.1.30"), "Should not match with wrong formatting.")
+		assert(aSpec's isSatisfiedBy("01:01:30pm", inputAttributes_map), "Should match the token.")
+		refute(aSpec's isSatisfiedBy("1:01:30", inputAttributes_map), "Should not match the token (needs zeros).")
+		refute(aSpec's isSatisfiedBy("1.1.30", inputAttributes_map), "Should not match with wrong formatting.")
 		assert(inputAttributes_map's containsValue("start date/time"), "Should contain a value for 'source token'")
 		set expectedDate to current date
 		set expectedDate to date "1:01:30pm" of expectedDate
@@ -763,13 +763,13 @@ script |CustomDateBuilder|
 				
 		set inputAttributes_map to collections's makeMap()
 		set aBuilder to rules's makeCustomDateBuilder(¬
-			inputAttributes_map, "start date/time", rules's ValueRetrievalStrategy, true)
+			"start date/time", rules's ValueRetrievalStrategy, true)
 
 		set aSpec to aBuilder's ¬
 			anHour("hh")'s l(":")'s aMinute("MM")'s l(":")'s aSecond("ss")'s AMPM()'s getContents()		
 		
---		assert(aSpec's isSatisfiedBy("01:02:03pm"), "Should match the token.")
-		assert(aSpec's isSatisfiedBy("1:2:3pm"), "Should not match the token (needs zeros).")
+--		assert(aSpec's isSatisfiedBy("01:02:03pm", inputAttributes_map), "Should match the token.")
+		assert(aSpec's isSatisfiedBy("1:2:3pm", inputAttributes_map), "Should not match the token (needs zeros).")
 		assert(inputAttributes_map's containsValue("start date/time"), "Should contain a value for 'source token'")
 		set expectedDate to current date
 		set expectedDate to date "13:02:03" of expectedDate
@@ -781,14 +781,14 @@ script |CustomDateBuilder|
 				
 		set inputAttributes_map to collections's makeMap()
 		set aBuilder to rules's makeCustomDateBuilder(¬
-			inputAttributes_map, "start date/time", rules's ValueRetrievalStrategy, true)
+			"start date/time", rules's ValueRetrievalStrategy, true)
 
 		set aSpec to aBuilder's ¬
 			anHour("_HH_")'s l(":")'s aMinute("_MM_")'s l(":")'s aSecond("_ss_")'s getContents()
 				
-		assert(aSpec's isSatisfiedBy("01:02:03"), "Should match the token.")
-		refute(aSpec's isSatisfiedBy("1:2:3"), "Should not match the token (needs zeros).")
-		refute(aSpec's isSatisfiedBy("1.2.3"), "Should not match with wrong formatting.")
+		assert(aSpec's isSatisfiedBy("01:02:03", inputAttributes_map), "Should match the token.")
+		refute(aSpec's isSatisfiedBy("1:2:3", inputAttributes_map), "Should not match the token (needs zeros).")
+		refute(aSpec's isSatisfiedBy("1.2.3", inputAttributes_map), "Should not match with wrong formatting.")
 		assert(inputAttributes_map's containsValue("start date/time"), "Should contain a value for 'source token'")
 		set expectedDate to current date
 		set expectedDate to date "01:01:03AM" of expectedDate
@@ -800,14 +800,14 @@ script |CustomDateBuilder|
 				
 		set inputAttributes_map to collections's makeMap()
 		set aBuilder to rules's makeCustomDateBuilder(¬
-			inputAttributes_map, "start date/time", rules's ValueRetrievalStrategy, true)
+			"start date/time", rules's ValueRetrievalStrategy, true)
 
 		set aSpec to aBuilder's ¬
 			anHour("HH")'s l(":")'s aMinute("MM")'s l(":")'s aSecond("ss")'s getContents()		
 		
---		assert(aSpec's isSatisfiedBy("01:02:03"), "Should match the token (nothing wrong with zeros).")
-		assert(aSpec's isSatisfiedBy("1:2:3"), "Should match the token (needs zeros).")
-		refute(aSpec's isSatisfiedBy("01.02.03"), "Should not match with wrong formatting.")
+--		assert(aSpec's isSatisfiedBy("01:02:03", inputAttributes_map), "Should match the token (nothing wrong with zeros).")
+		assert(aSpec's isSatisfiedBy("1:2:3", inputAttributes_map), "Should match the token (needs zeros).")
+		refute(aSpec's isSatisfiedBy("01.02.03", inputAttributes_map), "Should not match with wrong formatting.")
 		assert(inputAttributes_map's containsValue("start date/time"), "Should contain a value for 'source token'")
 		set expectedDate to current date
 		set expectedDate to date "01:02:03AM" of expectedDate
@@ -851,7 +851,7 @@ script |ContextConditionBuilder|
 		
 		set aSpec to builder's missing()'s getContents()
 		
-		assert(aSpec's isSatisfiedBy(aTask), "Should have found a missing context.")
+		assert(aSpec's isSatisfiedBy(aTask, missing value), "Should have found a missing context.")
 		
 	end script
 		
@@ -874,10 +874,10 @@ script |DateConditionBuilder|
 		
 		set aSpec to dueDate's isBefore(date "2015-01-01")'s getContents()
 		
-		assert(aSpec's isSatisfiedBy(date "2014-12-31"), "Should match date that comes the day before")
-		refute(aSpec's isSatisfiedBy(date "2015-01-01"), "Should not match date that comes on same date")
-		refute(aSpec's isSatisfiedBy(date "2015-01-02"), "Should not match date that comes after")
-		refute(aSpec's isSatisfiedBy(missing value), "Should not match missing value")
+		assert(aSpec's isSatisfiedBy(date "2014-12-31", missing value), "Should match date that comes the day before")
+		refute(aSpec's isSatisfiedBy(date "2015-01-01", missing value), "Should not match date that comes on same date")
+		refute(aSpec's isSatisfiedBy(date "2015-01-02", missing value), "Should not match date that comes after")
+		refute(aSpec's isSatisfiedBy(missing value, missing value), "Should not match missing value")
 	end script
 	
 	script |is after|
@@ -887,10 +887,10 @@ script |DateConditionBuilder|
 		
 		set aSpec to dueDate's isAfter(date "2015-01-01")'s getContents()
 		
-		refute(aSpec's isSatisfiedBy(date "2014-12-31"), "Should not match date that comes the day before")
-		refute(aSpec's isSatisfiedBy(date "2015-01-01"), "Should not match date that comes on same date")
-		assert(aSpec's isSatisfiedBy(date "2015-01-02"), "Should match date that comes after")
-		refute(aSpec's isSatisfiedBy(missing value), "Should not match missing value")
+		refute(aSpec's isSatisfiedBy(date "2014-12-31", missing value), "Should not match date that comes the day before")
+		refute(aSpec's isSatisfiedBy(date "2015-01-01", missing value), "Should not match date that comes on same date")
+		assert(aSpec's isSatisfiedBy(date "2015-01-02", missing value), "Should match date that comes after")
+		refute(aSpec's isSatisfiedBy(missing value, missing value), "Should not match missing value")
 	end script
 end script --DateConditionBuilder
 
@@ -1002,10 +1002,10 @@ script |RuleBase|
 		set aTask to createInboxTask("a matching task")
 
 		
-		assert(rules's makeRuleBase()'s taskName()'s sameAs("a matching task")'s getContents()'s isSatisfiedBy(aTask), "Task name should be the same (sameAs)")
-		refute(rules's makeRuleBase()'s taskName()'s sameAs("not a matching task")'s getContents()'s isSatisfiedBy(aTask), "Task name should not be the same (sameAs)")
-		refute(rules's makeRuleBase()'s taskName()'s notSameAs("a matching task")'s getContents()'s isSatisfiedBy(aTask), "Task name should be the same (notSameAs)")
-		assert(rules's makeRuleBase()'s taskName()'s notSameAs("not a matching task")'s getContents()'s isSatisfiedBy(aTask), "Task name should not be the same (notSameAs)")
+		assert(rules's makeRuleBase()'s taskName()'s sameAs("a matching task")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should be the same (sameAs)")
+		refute(rules's makeRuleBase()'s taskName()'s sameAs("not a matching task")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not be the same (sameAs)")
+		refute(rules's makeRuleBase()'s taskName()'s notSameAs("a matching task")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should be the same (notSameAs)")
+		assert(rules's makeRuleBase()'s taskName()'s notSameAs("not a matching task")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not be the same (notSameAs)")
 	end script
 	
 	script |Should find taskName starts with|
@@ -1013,10 +1013,10 @@ script |RuleBase|
 		
 		set aTask to createInboxTask("a matching task")
 		
-		assert(rules's makeRuleBase()'s taskName()'s startsWith("a matching")'s getContents()'s isSatisfiedBy(aTask), "Task name should not start with (startsWith)")
-		refute(rules's makeRuleBase()'s taskName()'s startsWith("matching task")'s getContents()'s isSatisfiedBy(aTask), "Task name should not start with (startsWith)")
-		refute(rules's makeRuleBase()'s taskName()'s doesNotStartWith("a matching")'s getContents()'s isSatisfiedBy(aTask), "Task name should start with (doesNotStartWith)")
-		assert(rules's makeRuleBase()'s taskName()'s doesNotStartWith("matching task")'s getContents()'s isSatisfiedBy(aTask), "Task name should not start with (doesNotStartWith)")
+		assert(rules's makeRuleBase()'s taskName()'s startsWith("a matching")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not start with (startsWith)")
+		refute(rules's makeRuleBase()'s taskName()'s startsWith("matching task")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not start with (startsWith)")
+		refute(rules's makeRuleBase()'s taskName()'s doesNotStartWith("a matching")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should start with (doesNotStartWith)")
+		assert(rules's makeRuleBase()'s taskName()'s doesNotStartWith("matching task")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not start with (doesNotStartWith)")
 	end script
 
 	script |Should find taskName ends with|
@@ -1024,10 +1024,10 @@ script |RuleBase|
 		
 		set aTask to createInboxTask("a matching task")
 		
-		assert(rules's makeRuleBase()'s taskName()'s endsWith("matching task")'s getContents()'s isSatisfiedBy(aTask), "Task name should not end with (endsWith)")
-		refute(rules's makeRuleBase()'s taskName()'s endsWith("a matching")'s getContents()'s isSatisfiedBy(aTask), "Task name should not end with (endsWith)")
-		refute(rules's makeRuleBase()'s taskName()'s doesNotEndWith("matching task")'s getContents()'s isSatisfiedBy(aTask), "Task name should end with (doesNotEndWith)")
-		assert(rules's makeRuleBase()'s taskName()'s doesNotEndWith("a matching")'s getContents()'s isSatisfiedBy(aTask), "Task name should not end with (doesNotEndWith)")
+		assert(rules's makeRuleBase()'s taskName()'s endsWith("matching task")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not end with (endsWith)")
+		refute(rules's makeRuleBase()'s taskName()'s endsWith("a matching")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not end with (endsWith)")
+		refute(rules's makeRuleBase()'s taskName()'s doesNotEndWith("matching task")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should end with (doesNotEndWith)")
+		assert(rules's makeRuleBase()'s taskName()'s doesNotEndWith("a matching")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not end with (doesNotEndWith)")
 	end script
 
 	script |Should find taskName contains|
@@ -1035,10 +1035,10 @@ script |RuleBase|
 		
 		set aTask to createInboxTask("a matching task")
 		
-		assert(rules's makeRuleBase()'s taskName()'s doesContain("matching")'s getContents()'s isSatisfiedBy(aTask), "Task name should not end with (endsWith)")
-		refute(rules's makeRuleBase()'s taskName()'s doesContain("another")'s getContents()'s isSatisfiedBy(aTask), "Task name should not end with (endsWith)")
-		refute(rules's makeRuleBase()'s taskName()'s doesNotContain("matching")'s getContents()'s isSatisfiedBy(aTask), "Task name should end with (doesNotEndWith)")
-		assert(rules's makeRuleBase()'s taskName()'s doesNotContain("another")'s getContents()'s isSatisfiedBy(aTask), "Task name should not end with (doesNotEndWith)")
+		assert(rules's makeRuleBase()'s taskName()'s doesContain("matching")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not end with (endsWith)")
+		refute(rules's makeRuleBase()'s taskName()'s doesContain("another")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not end with (endsWith)")
+		refute(rules's makeRuleBase()'s taskName()'s doesNotContain("matching")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should end with (doesNotEndWith)")
+		assert(rules's makeRuleBase()'s taskName()'s doesNotContain("another")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should not end with (doesNotEndWith)")
 	end script
 
 	script |Should find taskName matches|
@@ -1047,9 +1047,9 @@ script |RuleBase|
 		set aTask to createInboxTask("a matching task")
 		
 		--TODO: Enable this test and get functionality working.
-		assert(rules's makeRuleBase()'s taskName()'s match()'s l("a")'s anyText()'s getContents()'s isSatisfiedBy(aTask), "Task name should start with 'a'")
-		assert(rules's makeRuleBase()'s taskName()'s match()'s anyText()'s l("matching")'s anyText()'s getContents()'s isSatisfiedBy(aTask), "Task name should include 'matching'")
-		assert(rules's makeRuleBase()'s taskName()'s match()'s anyText()'s l("task")'s getContents()'s isSatisfiedBy(aTask), "Task name should end with 'task'")
+		assert(rules's makeRuleBase()'s taskName()'s match()'s l("a")'s anyText()'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should start with 'a'")
+		assert(rules's makeRuleBase()'s taskName()'s match()'s anyText()'s l("matching")'s anyText()'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should include 'matching'")
+		assert(rules's makeRuleBase()'s taskName()'s match()'s anyText()'s l("task")'s getContents()'s isSatisfiedBy(aTask, missing value), "Task name should end with 'task'")
 	end script
 
 end script --RuleBase

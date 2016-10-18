@@ -7,7 +7,7 @@ property name : "omnirulefile"
 
 use Rules : script "com.kraigparkinson/Hobson"
 use hoblib : script "com.kraigparkinson/Default OmniFocus Rules Library"
-
+use cfwof : script "com.kraigparkinson/Creating Flow with OmniFocus Rules"
 
 property parent : Rules
 
@@ -36,15 +36,6 @@ script ProcessBcc
 	command thru (do()'s taskName()'s prepend("Follow up ")) 
 end script
 
-(*
-script TransportTaskParsingScript
-	property parent : RuleSet(me)
-	property name : "Process Inbox Tasks"
-	property target : Rules's TransportTextInboxTasks
-
-	evaluate by hoblib's OmniFocusTransportTextParsingRule
-end script
-*)
 script InboxConfigScript
 	property parent : RuleSet(me)
 	property name : "Process Inbox Tasks"
@@ -52,8 +43,8 @@ script InboxConfigScript
 	
 	evaluate by hoblib's EvernoteTaskClonePreparationRule
 	evaluate by hoblib's OmniFocusTransportTextParsingRule
-	evaluate by hoblib's TidyConsiderationsRule
-	evaluate by hoblib's AddDailyRepeatRule
+	evaluate by cfwof's TidyConsiderationsRule
+	evaluate by cfwof's AddDailyRepeatRule
 	evaluate by hoblib's ExpiredMeetingPreparationRule
 	evaluate by hoblib's ExpiredCheckMeetingParticipationRule	
 end script

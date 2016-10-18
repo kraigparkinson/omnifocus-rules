@@ -1,7 +1,6 @@
 use AppleScript version "2.4"
 use scripting additions
 
-use ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
 use domain : script "com.kraigparkinson/OmniFocusDomain"
 use rules : script "com.kraigparkinson/Hobson"
 
@@ -13,48 +12,9 @@ property version : "1.0.0"
 (*! @abstract <em>[text]</em> Creating Flow with OmniFocus's id. *)
 property id : "com.kraigparkinson.Default OmniFocus Rules Library"
 
----------------------------
--- Rules inspired by Kourosh Dini's Creating Flow with OmniFocus --
----------------------------
-
-script AddDailyRepeatRule
-	property parent : rules's makeRuleBase()
-	property name : "Add Daily Repeat"
-	
-	set aToken to " (Add daily repeat)"
-	match by (taskName()'s doesContain(aToken)'s getContents())
-	
-	command thru (do()'s repetition()'s deferAnother("DAILY")'s getContents())
-	command thru (do()'s taskName()'s replace(aToken, "")'s getContents())
-	
-end script
-
-script AddWeeklyRepeatRule
-	property parent : rules's makeRuleBase()
-	property name : "Add Weekly Repeat"
-	
-	set aToken to " (Add weekly repeat)"
-	match by (taskName()'s doesContain(aToken)'s getContents())
-	
-	command thru (do()'s repetition()'s deferAnother("WEEKLY")'s getContents())
-	command thru (do()'s taskName()'s replace(aToken, "")'s getContents())
-	
-end script
-
-script TidyConsiderationsRule
-	property parent : rules's makeRuleBase()
-	property name : "Tidy considerations"
-	
-	--Conditions
-	match by (taskName()'s startsWith("Consider")'s getContents())
-	match by (context()'s missing()'s getContents())
-
-	--Actions
-	command thru (setContext("Considerations"))
-end script
 
 ---------------------------
--- Rules based on needs to leverage more liberal date processing from Zapier. --
+-- Rules based on Zapier generated tasks. --
 ---------------------------
 
 script EvernoteTaskClonePreparationRule
@@ -96,6 +56,10 @@ script ExpiredCheckMeetingParticipationRule
 	
 	command thru (markCompleted())		
 end script
+
+---------------------------
+-- Rules based on needs to leverage more liberal date processing from Zapier. --
+---------------------------
 
 script OmniFocusTransportTextParsingRule
 	property parent : rules's makeRuleBase()

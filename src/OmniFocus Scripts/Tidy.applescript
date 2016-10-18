@@ -3,6 +3,7 @@ use scripting additions
 
 use hobson : script "com.kraigparkinson/Hobson"
 use hoblib : script "com.kraigparkinson/Default OmniFocus Rules Library"
+use cfwof : script "com.kraigparkinson/Creating Flow with OmniFocus Rules"
 
 property parent : hobson
 
@@ -26,8 +27,8 @@ script TidySet
 
 	evaluate by hoblib's OmniFocusTransportTextParsingRule
 	evaluate by StripSourceTokens
-	evaluate by hoblib's TidyConsiderationsRule
-	evaluate by hoblib's AddDailyRepeatRule
+	evaluate by cfwof's TidyConsiderationsRule
+	evaluate by cfwof's AddDailyRepeatRule
 	evaluate by hoblib's ExpiredMeetingPreparationRule
 	evaluate by hoblib's ExpiredCheckMeetingParticipationRule	
 end script		

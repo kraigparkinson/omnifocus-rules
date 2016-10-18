@@ -47,6 +47,7 @@ script BuildScriptLibrary
 
 	tell BuildRulesEngine to exec:{ }
 	makeScriptBundle from joinPath(sourceDir, "Default OmniFocus Rules Library.applescript") at destinationDir with overwriting
+	makeScriptBundle from joinPath(sourceDir, "Creating Flow with OmniFocus Rules.applescript") at destinationDir with overwriting
 end script
 
 script BuildOFApplicationScripts
@@ -82,7 +83,6 @@ script BuildRules
 	tell BuildRulesEngine to exec:{}
 	tell BuildScriptLibrary to exec:{}
 	makeScriptBundle from "src/Rule Sets/omnirulefile.applescript" at "build/Rule Sets" with overwriting
---	makeScriptBundle from "src/Rule Sets/missingsuite.applescript" at "build/Rule Sets" with overwriting
 end script
 
 script build
@@ -101,6 +101,7 @@ script buildAll
 	tell BuildScriptLibrary to exec:{}
 	tell BuildOFApplicationScripts to exec:{}
 	tell BuildHazelScripts to exec:{}
+	tell BuildRules to exec:{}
 	
 	osacompile(glob({}), "scpt", {"-x"})
 end script
@@ -197,6 +198,7 @@ script installScriptLibraries
 
 	tell BuildScriptLibrary to exec:{}
 	installWithOverwriteAlert("com.kraigparkinson/Default OmniFocus Rules Library", "com.kraigparkinson")	
+	installWithOverwriteAlert("com.kraigparkinson/Creating Flow with OmniFocus Rules", "com.kraigparkinson")	
 end script
 
 script installHazelScript
@@ -294,27 +296,54 @@ script BuildTests
 	
 	makeScriptBundle from "test/Test Hobson.applescript" at "test" with overwriting
 	makeScriptBundle from "test/Test Default OmniFocus Rules Library.applescript" at "test" with overwriting
+	makeScriptBundle from "test/Test Creating Flow with OmniFocus Rules.applescript" at "test" with overwriting
 	makeScriptBundle from "test/Test OmniFocus Rule Processing Daemon.applescript" at "test" with overwriting
 	makeScriptBundle from "test/Test Process Inbox.applescript" at "test" with overwriting
 	makeScriptBundle from "test/Test Tidy.applescript" at "test" with overwriting
 end script
 
-script RunTests
+script RunUnitTests
 	property parent : Task(me)
-	property name : "test/run"
-	property description : "Build and run tests"
+	property name : "test/run-unit"
+	property description : "Build and run unit tests"
 	property printSuccess : false
-	
+
 	shell for "open" & space & POSIX path of ((path to home folder) as text) & "test.ofocus"
-	
+
 	tell BuildTests to exec:{}
 	-- The following causes a segmentation fault unless ASUnit in installed in a shared location
-	
+
 	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Hobson.scptd"))
 	run testSuite
+end script
+
+script RunRuleTests
+	property parent : Task(me)
+	property name : "test/run-rules"
+	property description : "Build and run unit tests"
+	property printSuccess : false
+
+	shell for "open" & space & POSIX path of ((path to home folder) as text) & "test.ofocus"
+
+	tell BuildTests to exec:{}
 
 	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Default OmniFocus Rules Library.scptd"))
 	run testSuite
+
+	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Creating Flow with OmniFocus Rules.scptd"))
+	run testSuite
+end script
+
+
+script RunFunctionalTests
+	property parent : Task(me)
+	property name : "test/run-func"
+	property description : "Build and run unit tests"
+	property printSuccess : false
+
+	shell for "open" & space & POSIX path of ((path to home folder) as text) & "test.ofocus"
+
+	tell BuildTests to exec:{}
 
 	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test OmniFocus Rule Processing Daemon.scptd"))
 	run testSuite
@@ -324,7 +353,19 @@ script RunTests
 
 	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Tidy.scptd"))
 	run testSuite
+end script
 
+script RunTests
+	property parent : Task(me)
+	property name : "test/run"
+	property description : "Build and run all tests"
+	property printSuccess : false
+	
+	shell for "open" & space & POSIX path of ((path to home folder) as text) & "test.ofocus"
+	
+	tell RunUnitTests to exec:{}
+	tell RunRuleTests to exec:{}
+	tell RunFunctionalTests to exec:{}	
 end script
 
 script uninstallRulesEngine
@@ -341,6 +382,12 @@ script uninstallRulesEngine
 	ohai(targetPath & space & "deleted.")
 
 	set targetPath to joinPath(dir, "com.kraigparkinson/Default OmniFocus Rules Library.scptd")
+	if pathExists(targetPath) then
+		removeItem at targetPath
+	end if
+	ohai(targetPath & space & "deleted.")		
+
+	set targetPath to joinPath(dir, "com.kraigparkinson/Creating Flow with OmniFocus Rules.scptd")
 	if pathExists(targetPath) then
 		removeItem at targetPath
 	end if

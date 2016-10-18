@@ -4,7 +4,6 @@ use scripting additions
 use textutil : script "com.kraigparkinson/ASText"
 use dateutil : script "com.kraigparkinson/ASDate"
 use collections : script "com.kraigparkinson/ASCollections"
-use ddd : script "com.kraigparkinson/ASDomainDrivenDesign"
 use domain : script "com.kraigparkinson/OmniFocusDomain"
 
 (*! @abstract <em>[text]</em> OmniFocus Rule Processing Daemon's name. *)
@@ -193,7 +192,7 @@ script RuleFactory
 				repeat with aTask in tasks
 					overb("[" & name & "]" & "Processing task" & space & taskIndex & space & "of" & space & count of tasks)
 			
-					set inputAttributes to { }
+					set inputAttributes to collections's makeMap()
 	
 					set taskIsMatched to false
 
@@ -284,17 +283,17 @@ script RuleFactory
 			(*
 			@post Returns boolean or record
 			*)
-			on matchTask(aTask, inputAttributes)
+			on matchTask(aTask, pInputAttributes_map)
 				--Implement all
 				set satisfiedConditions to 0
 		
 				odebug("[" & name & "]" & "Preparing to evaluate " & count of conditions & " conditions.")
 				repeat with condition in conditions
 					odebug("[" & name & "]" & "Evaluating condition: " & condition's name)
-					set aMatchResult to condition's isSatisfiedBy(aTask)
+					set aMatchResult to condition's isSatisfiedBy(aTask, pInputAttributes_map)
 			
 					if (aMatchResult's class is boolean)
-						odebug("[" & name & "]" & "Task meets condition: " & aMatchResult)
+						odebug("[" & name & "]" & "Task meets conditions: " & aMatchResult)
 			
 						if (aMatchResult) then set satisfiedConditions to satisfiedConditions + 1
 					else if (aMatchResult's class is record)
@@ -314,7 +313,7 @@ script RuleFactory
 			(*
 			@post Throws error if there's a problem processing rule.
 			*)
-			on processTask(aTask, inputAttributes)
+			on processTask(aTask, pInputAttributes_map)
 				overb("[" & name & "]" & "Preparing to execute " & count of actions & " commands on task.")
 				repeat with anAction in actions
 					overb("[" & name & "]" & "Executing command: " & anAction's name)
@@ -329,7 +328,7 @@ script RuleFactory
 end script --RuleFactory
 
 script ValueRetrievalStrategy
-	on getValue(obj)
+	on getValue(obj, inputAttributes_map)
 		return obj
 	end getValue
 end script
@@ -337,7 +336,7 @@ end script
 script TaskNameRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 	
-	on getValue(aTask)
+	on getValue(aTask, inputAttributes_map)
 		return aTask's getName()		
 	end getValue
 end script
@@ -345,7 +344,7 @@ end script
 script NoteRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 
-	on getValue(aTask)
+	on getValue(aTask, inputAttributes_map)
 		return aTask's _noteValue()		
 	end getValue
 end script
@@ -353,7 +352,7 @@ end script
 script CompletedRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 	
-	on getValue(aTask)
+	on getValue(aTask, inputAttributes_map)
 		return aTask's _completedValue()
 	end getValue
 end script
@@ -361,7 +360,7 @@ end script
 script FlagRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 	
-	on getValue(aTask)
+	on getValue(aTask, inputAttributes_map)
 		return aTask's _flaggedValue()
 	end getValue
 end script
@@ -369,7 +368,7 @@ end script
 script ContextNameRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 	
-	on getValue(aTask)
+	on getValue(aTask, inputAttributes_map)
 		using terms from application "OmniFocus"
 			return aTask's _contextValue()'s name
 		end using terms from
@@ -379,7 +378,7 @@ end script
 script DueDateRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 	
-	on getValue(aTask)
+	on getValue(aTask, inputAttributes_map)
 		return aTask's _dueDateValue()
 	end getValue
 end script
@@ -387,12 +386,77 @@ end script
 script DeferDateRetrievalStrategy
 	property parent : ValueRetrievalStrategy
 	
-	on getValue(aTask)
+	on getValue(aTask, inputAttributes_map)
 		return aTask's _deferDateValue()
 	end getValue
 end script
 
 script SpecificationFactory
+	script DefaultSpecification
+		property class : "DefaultSpecification"
+		
+		on isSatisfiedBy(task_entity, inputAttributes_map)
+			return true
+		end isSatisfiedBy
+	
+		on andSpec(other)
+			set one to me
+			script AndSpecification
+				property parent : DefaultSpecification
+				property class : "AndSpecification"
+				property oneSpec : one
+				property otherSpec : other
+				property name : "(" & one's name & space & "and" & space & other's name & ")"
+	
+				on isSatisfiedBy(candidate, inputAttributes_map)
+					set satisfiedByResult to oneSpec's isSatisfiedBy(candidate, inputAttributes_map)
+					if (satisfiedByResult)
+						return otherSpec's isSatisfiedBy(candidate, inputAttributes_map)
+					else
+						return false
+					end if 
+				end isSatisfiedBy
+			end script
+			return AndSpecification
+		end andSpec
+
+		on orSpec(other)	
+			set one to me
+			
+			script OrSpecification
+				property parent : DefaultSpecification
+				property class : "OrSpecification"
+				property oneSpec : one
+				property otherSpec : other
+				property name : "(" & one's name & space & "or" & space & other's name & ")"
+		
+				on isSatisfiedBy(candidate, inputAttributesMap)
+		
+					return oneSpec's isSatisfiedBy(candidate, inputAttributesMap) or otherSpec's isSatisfiedBy(candidate, inputAttributesMap)
+				end isSatisfiedBy
+			end script
+			return OrSpecification
+		end orSpec
+	
+		on notSpec()
+			set wrapped to me
+			
+			script NotSpecification
+				property parent : DefaultSpecification
+				property class : "NotSpecification"
+				property wrappedSpec : wrapped
+				property name : "not (" & wrapped's name & ")"
+
+
+				on isSatisfiedBy(candidate, inputAttributesMap)		
+					return not wrappedSpec's isSatisfiedBy(candidate, inputAttributesMap)
+				end isSatisfiedBy
+			end script
+			return NotSpecification
+		end notSpec
+	
+	end script
+
 	script TextValidationStrategy
 		on matchesText(actual)
 		end matchesText
@@ -403,13 +467,13 @@ script SpecificationFactory
 		if (aValidationStrategy is missing value) then error "TextSpecification properties should have a validationStrategy."
 
 		script TextSpecification
-			property parent : ddd's DefaultSpecification
+			property parent : DefaultSpecification
 			property sourcingStrategy : aSourcingStrategy
 			property validationStrategy : aValidationStrategy
 			property name : "TextSpecification"
 	
-			on isSatisfiedBy(obj)
-				return validationStrategy's matchesText(sourcingStrategy's getValue(obj))
+			on isSatisfiedBy(task_entity, inputAttributes_map)
+				return validationStrategy's matchesText(sourcingStrategy's getValue(task_entity, inputAttributes_map))
 			end isSatisfiedBy
 		end script
 
@@ -477,19 +541,19 @@ script SpecificationFactory
 		end validateDate
 	end 
 
-	on makeDateSpecification(aReferenceValue, aSourcingStrategy, aValidationStrategy)
+	on makeDateSpecification(aSourcingStrategy, aValidationStrategy)
 		if (aSourcingStrategy is missing value) then error "Can't create DateSpecification without a sourcing strategy."
 		if (aValidationStrategy is missing value) then error "Can't create DateSpecification without a validation strategy."
 		
 		script DateSpecification
-			property parent : ddd's DefaultSpecification
+			property parent : DefaultSpecification
 			property sourcingStrategy : aSourcingStrategy
 			property validationStrategy : aValidationStrategy
 			property class : "DateSpecification"
 			property name : "DateSpecification"
 	
-			on isSatisfiedBy(obj)
-				return validationStrategy's validateDate(sourcingStrategy's getValue(obj))
+			on isSatisfiedBy(task_entity, inputAttributes_map)
+				return validationStrategy's validateDate(sourcingStrategy's getValue(task_entity, inputAttributes_map))
 			end isSatisfiedBy
 		end script
 
@@ -506,44 +570,61 @@ script SpecificationFactory
 
 		set validation to the result
 
-		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
+		set aSpec to makeDateSpecification(dateFetcher, validation)
 		set aSpec's name to "same as " & expected
 		return aSpec
 	end makeSameAsDateSpecification
 
-	on makeIsBeforeDateSpecification(referenceDate, dateFetcher)
+	on makeIsBeforeDateSpecification(pReference_date, dateFetcher)
 		script IsBeforeDateSpecification
-			property parent : ddd's Specification
-			property reference_date : referenceDate
-			on isSatisfiedBy(aDate)
+			property parent : DefaultSpecification
+			property reference_date : pReference_date
+			on isSatisfiedBy(aDate, inputAttributes_map)
+				if (reference_date's class is not date)
+					set reference_date to reference_date's getValue()
+				end if
+				log "ref date: " & reference_date
+				log "aDate: " & reference_date
 				aDate comes before reference_date
 			end isSatisfiedBy
 		end script
 		
 		script 
 			property parent : DateValidationStrategy
+			property reference_date : pReference_date
+			
 			on validateDate(actual)
-				actual comes before referenceDate
+				if (reference_date's class is not date)
+					set reference_date to reference_date's getValue()
+				end if
+				log "ref date: " & reference_date
+				log "actual: " & actual
+				actual comes before reference_date
 			end validateDate
 		end script
 
 		set validation to the result
-		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
-		set aSpec's name to "is before " & referenceDate
+		set aSpec to makeDateSpecification(dateFetcher, validation)
+		set aSpec's name to "is before specified date"
 		return aSpec
 	end makeIsBeforeDateSpecification
 
-	on makeIsAfterDateSpecification(referenceDate, dateFetcher)
+	on makeIsAfterDateSpecification(pReference_date, dateFetcher)
 		script 
 			property parent : DateValidationStrategy
+			property reference_date : pReference_date
+			
 			on validateDate(actual)
-				return actual comes after referenceDate
+				if (reference_date's class is not date)
+					set reference_date to reference_date's getValue()
+				end if
+				return actual comes after reference_date
 			end validateDate
 		end script
 
 		set validation to the result
-		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
-		set aSpec's name to "is after " & referenceDate
+		set aSpec to makeDateSpecification(dateFetcher, validation)
+		set aSpec's name to "is after specified date"
 		return aSpec
 	end makeIsAfterDateSpecification
 
@@ -565,7 +646,7 @@ script SpecificationFactory
 		end script
 
 		set validation to the result
-		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
+		set aSpec to makeDateSpecification(dateFetcher, validation)
 		set aSpec's name to "in the next " & specifiedDays & " days"
 		return aSpec
 	end makeInTheNextIntervalDateSpecification
@@ -584,7 +665,7 @@ script SpecificationFactory
 		end script
 
 		set validation to the result
-		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
+		set aSpec to makeDateSpecification(dateFetcher, validation)
 		set aSpec's name to "in the last " & specifiedDays & " days"
 		return aSpec
 	end makeInTheLastIntervalDateSpecification
@@ -595,12 +676,13 @@ script SpecificationFactory
 			property name : "is missing"
 	
 			on validateDate(actual)
+				log "actual: " & actual
 				return actual is missing value
 			end validateDate
 		end script
 
 		set validation to the result
-		set aSpec to makeDateSpecification(missing value, dateFetcher, validation)
+		set aSpec to makeDateSpecification(dateFetcher, validation)
 		set aSpec's name to "missing date"
 		return aSpec
 	end makeMissingDateSpecification	
@@ -609,13 +691,13 @@ script SpecificationFactory
 		if (conditionProps is missing value) then error "Can't create MatchesTextSpecification with missing properties"
 
 		script MatchesTextSpecification
-			property parent : ddd's DefaultSpecification
+			property parent : DefaultSpecification
 			property referenceText : aReferenceText
 			property sourcingStrategy : aSourcingStrategy
 			property name : "matches text (" & referenceText & ") from (" & (sourcingStrategy's name) & ")"
 				
-			on isSatisfiedBy(obj)
-				return sourcingStrategy's getValue(obj) contains referenceText
+			on isSatisfiedBy(task_entity, inputAttributes_map)
+				return sourcingStrategy's getValue(task_entity, inputAttributes_map) contains referenceText
 			end isSatisfiedBy
 		end script
 		return MatchesTextSpecification
@@ -630,13 +712,13 @@ script SpecificationFactory
 		if (aValidationStrategy is missing value or aSourcingStrategy is missing value) then error "Can't create BooleanSpecification with missing properties"
 
 		script BooleanSpecification
-			property parent : ddd's DefaultSpecification
+			property parent : DefaultSpecification
 			property sourcingStrategy : aSourcingStrategy
 			property validationStrategy : aValidationStrategy
 			property class : "BooleanSpecification"
 							
-			on isSatisfiedBy(obj)
-				return validationStrategy's matchesValue(sourcingStrategy's getValue(obj))
+			on isSatisfiedBy(task_entity, inputAttributes_map)
+				return validationStrategy's matchesValue(sourcingStrategy's getValue(task_entity, inputAttributes_map))
 			end isSatisfiedBy
 		end script
 		return BooleanSpecification
@@ -718,9 +800,9 @@ script ItemGroupingPolicy
 end script
 
 
-on makeCustomTextBuilder(inputAttributes_map, attribute_name, aTextStrategy, isMatch_boolean)
+on makeCustomTextBuilder(attribute_name, aTextStrategy, isMatch_boolean)
 	script CustomTextBuilder
-		property parent : makeTextMatchPatternConditionBuilder(inputAttributes_map, missing value, aTextStrategy, isMatch_boolean, HolisticGroupingPolicy)
+		property parent : makeTextMatchPatternConditionBuilder(missing value, aTextStrategy, isMatch_boolean, HolisticGroupingPolicy)
 		property tokenName : attribute_name
 		
 		on getContents()
@@ -728,10 +810,10 @@ on makeCustomTextBuilder(inputAttributes_map, attribute_name, aTextStrategy, isM
 			set index_list to my customTextIndex_list
 			
 			script CustomTextBuilderSpecification
-				property parent : ddd's DefaultSpecification
+				property parent : SpecificationFactory's DefaultSpecification
 				
-				on isSatisfiedBy(task_entity)
-					set matching_text to aTextStrategy's getValue(task_entity)
+				on isSatisfiedBy(task_entity, inputAttributes_map)
+					set matching_text to aTextStrategy's getValue(task_entity, inputAttributes_map)
 					set match_list to textutil's getMatch(matching_text, regex_text)
 					set match to (count of match_list > 0)
 					
@@ -763,7 +845,7 @@ on makeCustomTextBuilder(inputAttributes_map, attribute_name, aTextStrategy, isM
 	return CustomTextBuilder
 end makeCustomTextBuilder
 
-on makeCustomDateBuilder(pInputAttributes, pToken_name, pValueRetreivalStrategy, pIsMatch)
+on makeCustomDateBuilder(pToken_name, pValueRetreivalStrategy, pIsMatch)
 	script CustomDateBuilder
 		property tokenName : pToken_name
 		property regex : ""
@@ -772,7 +854,6 @@ on makeCustomDateBuilder(pInputAttributes, pToken_name, pValueRetreivalStrategy,
 		property aTextStrategy : pValueRetreivalStrategy
 		property groupingPolicy : HolisticGroupingPolicy
 		property isMatch_boolean : pIsMatch
-		property inputAttributes_map : pInputAttributes
 	
 		on token(tokenName)
 			set my tokenName to tokenName
@@ -781,50 +862,6 @@ on makeCustomDateBuilder(pInputAttributes, pToken_name, pValueRetreivalStrategy,
 		on aShortDate()
 			set regex to¬
 				"[[:digit:]]{4}[-][[:digit:]]{2}[-][[:digit:]]{2}" 
-(*)	
-			set regex to ¬
-				"(?#Calandar from January 1st 1 A.D to December 31, 9999 )(?# in yyyy-mm-dd format )¬
-				(?!¬
-					(?:1582[:digit:]10[:digit:](?:0?[5-9]|1[0-4]))|¬
-					(?#Missing days from 1582 )
-					(?:1752[:digit:]0?9[:digit:](?:0?[3-9]|1[0-3]))
-					(?#or Missing days from 1752 )
-					(?# both sets of missing days should not be in the same calendar so remove one or the other)
-				)
-				(?n:^(?=[:digit:])¬
-					(?# the character at the beginning a the string must be a digit )
-					(
-						(?'year'[:digit:]{4})(?'sep'[-./])¬
-						(?'month'0?[1-9]|1[012])¬
-							\\k'sep'(?'day'(?<!(?:0?[469]|11).)31|(?<!0?2.)30|2[0-8]|1[:digit:]|0?[1-9]|¬
-								(?# if feb 29th check for valid leap year )¬
-									(?:¬
-										(?<=¬
-											(?!¬
-												(?#exclude these years from leap year pattern ) 000[04]¬
-												(?#No year 0 and no leap year in year 4 )|(?:(?:1[^0-6]|[2468][^048]|[3579][^26])00)¬
-												(?# centurial years > 1500 not evenly divisible by 400 are not leap year)¬
-											)¬
-											(?:¬
-												(?:[:digit:][:digit:])¬
-												(?# century)¬
-												(?:[02468][048]|[13579][26])¬
-												(?#leap years)¬
-											)
-											\\k'sep'(?:0?2)\\k'sep')|¬
-											(?# else if not Feb 29 )(?<!\\k'sep'(?:0?2)\\k'sep')¬
-											(?# and day not Feb 30 or 31 )¬
-									)29)
-						(?(?=[:digitx:]{2}[:digit:])[:digitx:]{2}|$)¬
-					)?¬
-					(?# if there is a space followed by a digit check for time )¬
-					(?<time>¬
-						((?# 12 hour format )(0?[1-9]|1[012])(?# hours )(:[0-5][:digit:]){0,2}¬
-								(?# optional minutes and seconds )(?i:[:digitx:]{2}[AP]M)¬
-								(?# required AM or PM ))|(?# 24 hour format )([01][:digit:]|2[0-3])(?#hours )(:[0-5][:digit:]){1,2}¬
-					)¬
-					(?#required minutes optional seconds )?$¬
-				)"*)
 			return me
 		end 
 
@@ -959,10 +996,10 @@ on makeCustomDateBuilder(pInputAttributes, pToken_name, pValueRetreivalStrategy,
 			set index_list to my customTextIndex_list
 			
 			script CustomDateBuilderSpecification
-				property parent : ddd's DefaultSpecification
+				property parent : SpecificationFactory's DefaultSpecification
 				
-				on isSatisfiedBy(task_entity)
-					set matching_text to aTextStrategy's getValue(task_entity)
+				on isSatisfiedBy(task_entity, inputAttributes_map)
+					set matching_text to aTextStrategy's getValue(task_entity, inputAttributes_map)
 					set match_list to textutil's getMatch(matching_text, regex_text)
 					set match to (count of match_list > 0)
 					
@@ -994,7 +1031,7 @@ on makeCustomDateBuilder(pInputAttributes, pToken_name, pValueRetreivalStrategy,
 	return CustomDateBuilder
 end makeCustomDateBuilder
 
-on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy, isMatch_boolean, aGroupingPolicy)
+on makeTextMatchPatternConditionBuilder(aBuilder, aTextStrategy, isMatch_boolean, aGroupingPolicy)
 	if (aTextStrategy is missing value) then error "Can't create a TextMatchPatternConditionBuilder without a text strategy."
 	
 	set builders_list to { }
@@ -1014,7 +1051,6 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 		property groupingPolicy : aGroupingPolicy
 		property expressionCounter : anExpressionCounter
 		property customTextIndex_list : aCustomTextIndex_list
-		property inputAttributes_map : inputAttributes
 		
 		on attributes()
 			return attribute_list
@@ -1027,8 +1063,8 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(task_entity)
-							set matching_text to textStrategy's getValue(task_entity)
+						on isSatisfiedBy(task_entity, inputAttributes_map)
+							set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 							return textutil's doesMatch(matching_text, "[[:alpha:]]{1}")
 						end isSatisfiedBy
 					end script
@@ -1047,8 +1083,8 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(task_entity)
-							set matching_text to textStrategy's getValue(task_entity)
+						on isSatisfiedBy(task_entity, inputAttributes_map)
+							set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 							return textutil's doesMatch(matching_text, "[[:digit:]]{1}")
 						end isSatisfiedBy
 					end script
@@ -1067,8 +1103,8 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(task_entity)
-							set matching_text to textStrategy's getValue(task_entity)
+						on isSatisfiedBy(task_entity, inputAttributes_map)
+							set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 							return textutil's doesMatch(matching_text, "[[:alnum:]]{1}")
 						end isSatisfiedBy
 					end script
@@ -1088,8 +1124,8 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(task_entity)
-							set matching_text to textStrategy's getValue(task_entity)
+						on isSatisfiedBy(task_entity, inputAttributes_map)
+							set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 							return textutil's doesMatch(matching_text, "[[:punct:]]{1}")
 						end isSatisfiedBy
 					end script
@@ -1108,8 +1144,8 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(task_entity)
-							set matching_text to textStrategy's getValue(task_entity)
+						on isSatisfiedBy(task_entity, inputAttributes_map)
+							set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 							return textutil's doesMatch(matching_text, "[[:alpha:]]{1,}")
 						end isSatisfiedBy
 					end script
@@ -1130,8 +1166,8 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(task_entity)
-							set matching_text to textStrategy's getValue(task_entity)
+						on isSatisfiedBy(task_entity, inputAttributes_map)
+							set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 							return textutil's doesMatch(matching_text, "[[:digit:]]{1,}")
 						end isSatisfiedBy
 					end script
@@ -1152,8 +1188,8 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(task_entity)
-							set matching_text to textStrategy's getValue(task_entity)
+						on isSatisfiedBy(task_entity, inputAttributes_map)
+							set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 							return textutil's doesMatch(matching_text, "[[:alnum:]]{1,}")
 						end isSatisfiedBy
 					end script
@@ -1173,8 +1209,8 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(task_entity)
-							set matching_text to textStrategy's getValue(task_entity)
+						on isSatisfiedBy(task_entity, inputAttributes_map)
+							set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 							return textutil's doesMatch(matching_text, "[[:punct:]]{1,}")
 						end isSatisfiedBy
 					end script
@@ -1211,8 +1247,8 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(task_entity)
-							set matching_text to textStrategy's getValue(task_entity)
+						on isSatisfiedBy(task_entity, inputAttributes_map)
+							set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 							return textutil's doesMatch(matching_text, ".*")
 						end isSatisfiedBy
 					end script
@@ -1231,8 +1267,8 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 			script 
 				on getContents()
 					script 
-						on isSatisfiedBy(task_entity)
-							set matching_text to textStrategy's getValue(task_entity)
+						on isSatisfiedBy(task_entity, inputAttributes_map)
+							set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 							return textutil's doesMatch(matching_text, literal_text)
 						end isSatisfiedBy
 					end script
@@ -1248,17 +1284,16 @@ on makeTextMatchPatternConditionBuilder(inputAttributes, aBuilder, aTextStrategy
 --			set aSpec to originatingBuilder's getContents()
 			
 (*						
-			set mySpec to ddd's DefaultSpecification
+			set mySpec to SpecificationFactory's DefaultSpecification
 			repeat with aBuilder in builders
 				set mySpec to mySpec's andSpec(aBuilder's getContents())
 			end repeat
-*)		
-			
-			
+*)					
 			script TextMatchPatternCondition
-				property parent : ddd's DefaultSpecification
-				on isSatisfiedBy(task_entity)
-					set matching_text to textStrategy's getValue(task_entity)
+				property parent : SpecificationFactory's DefaultSpecification
+
+				on isSatisfiedBy(task_entity, inputAttributes_map)
+					set matching_text to textStrategy's getValue(task_entity, inputAttributes_map)
 					
 					set match to textutil's doesMatch(matching_text, regex)
 					
@@ -1356,17 +1391,17 @@ on makeTextSpecificationBuilder(aTextStrategy)
 		end doesNotContain
 	
 		on match()
-			set matchBuilder to makeTextMatchPatternConditionBuilder(inputAttributes, me, textStrategy, true, ItemGroupingPolicy)
+			set matchBuilder to makeTextMatchPatternConditionBuilder(me, textStrategy, true, ItemGroupingPolicy)
 			return matchBuilder
 		end match
 
 		on doesNotMatch()
-			set doesNotMatchBuilder to makeTextMatchPatternConditionBuilder(inputAttributes, me, textStrategy, false, ItemGroupingPolicy)
+			set doesNotMatchBuilder to makeTextMatchPatternConditionBuilder(me, textStrategy, false, ItemGroupingPolicy)
 			return doesNotMatchBuilder
 		end match
 	
 		on getContents()
-			set aCondition to ddd's DefaultSpecification
+			set aCondition to SpecificationFactory's DefaultSpecification
 		
 			if (sameAsText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeSameAsTextSpecification(sameAsText, textStrategy))
 			if (notSameAsText is not missing value) then set aCondition to aCondition's andSpec(SpecificationFactory's makeSameAsTextSpecification(notSameAsText, textStrategy)'s notSpec())
@@ -1423,13 +1458,13 @@ on makeDateConditionBuilder(aDateStrategy)
 			return me
 		end notSameAs
 	
-		on isBefore(matchingDate as date)
+		on isBefore(matchingDate)
 			set isMissingValue to false
 			set isBeforeDate to matchingDate
 			return me
 		end isBefore
 	
-		on isAfter(matchingDate as date)
+		on isAfter(matchingDate)
 			set isMissingValue to false
 			set isAfterDate to matchingDate
 			return me
@@ -1470,7 +1505,7 @@ on makeDateConditionBuilder(aDateStrategy)
 		end notMissing
 	
 		on getContents()
-			set aCondition to ddd's DefaultSpecification
+			set aCondition to SpecificationFactory's DefaultSpecification
 		
 			if (isMissingValue is not (missing value)) then 
 				if (isMissingValue) then 
@@ -1519,7 +1554,7 @@ on makeContextConditionBuilder()
 		end notMissing
 	
 		on getContents()
-			set aCondition to ddd's DefaultSpecification
+			set aCondition to SpecificationFactory's DefaultSpecification
 		
 			if (nameConditionBuilder is not missing value) then set aCondition to aCondition's andSpec(nameConditionBuilder's getContents())
 		
@@ -1538,9 +1573,6 @@ on makeContextConditionBuilder()
 	end script
 	return ContextConditionBuilder
 end makeContextConditionBuilder
-
-
-
 
 script CommandFactory
 	on makeSetTaskNameCommand(aTaskName)
@@ -1718,12 +1750,6 @@ script CommandFactory
 	end makeAppendTextToNoteCommand
 	
 end script --CommandFactory
-
-
-
-
-
-
 
 on makeTaskNameCommandBuilder()
 	script TaskNameCommandBuilder
@@ -1942,6 +1968,7 @@ on makeRuleBase()
 		property commandBuilder : missing value
 		property completeConditionBuilder : missing value
 		property flagConditionBuilder : missing value
+		property dateAttrBuilders : { }
 		
 		--Context variables
 	
@@ -2012,23 +2039,47 @@ on makeRuleBase()
 			return domain's CommandFactory's makeMarkCompleteCommand()
 		end markCompleted
 		
-		on dateAttr(pName)
-			return makeCustomDateBuilder(collections's makeMap(), pName, TaskNameRetrievalStrategy, true)
-		end dateAttr
+		on setDateAttr(pName)
+			return makeCustomDateBuilder(pName, TaskNameRetrievalStrategy, true)
+		end setDateAttr
 		
 		on textAttr(pName)
-			return makeCustomTextBuilder(collections's makeMap(), pName, TaskNameRetrievalStrategy, true)
+			return makeCustomTextBuilder(pName, TaskNameRetrievalStrategy, true)
 		end textAttr
+		
+		on getDateAttr(pName)
+			--TODO: Figure out how to assign a map to the rule itself, not just a map to go along with the task.			
+			script
+				property name_text : pName
+				on getValue(aTask, inputAttributes_map)
+					set attr_date to missing value
+					if (inputAttributes_map's containsValue(name_text))
+						set attr_date to inputAttributes_map's getValue(name_text)
+					end if
+					
+					return attr_date 
+				end getValue
+			end script
+			
+			set dateStrategy to the result
+			set aBuilder to makeDateConditionBuilder(dateStrategy)
+			set end of dateAttrBuilders to aBuilder
+			return aBuilder
+		end getDateAttr
 		
 		
 		on getContents()
-			set aSpec to ddd's DefaultSpecification
+			set aSpec to SpecificationFactory's DefaultSpecification
 		
 			if (taskNameConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(taskNameConditionBuilder's getContents())
 			if (contextConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(contextConditionBuilder's getContents())
 			if (deferDateConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(deferDateConditionBuilder's getContents())
 			if (dueDateConditionBuilder is not missing value) then set aSpec to aSpec's andSpec(dueDateConditionBuilder's getContents())
-		
+			
+			--repeat with aBuilder in dateAttrBuilders
+			--	set aSpec to aSpec's andSpec(aBuilder's getContents())
+			--end repeat
+			
 			return aSpec
 		end getContents
 	end script
