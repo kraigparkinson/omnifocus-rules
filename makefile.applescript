@@ -169,17 +169,18 @@ script installRulesEngine
 	property dir : POSIX path of ¬
 		((path to library folder from user domain) as text) & "Script Libraries"
 	property description : "Install Hobson in" & space & dir
+	property packageName : "com.kraigparkinson"
 
 	on installWithOverwriteAlert(scriptname, targetDirName)
 		set targetDir to joinPath(dir, targetDirName)
 		set targetPath to joinPath(targetDir, scriptname & ".scptd")
 
-		copyItem at "build/Script Libraries/" & scriptname & ".scptd" into targetDir with overwriting
+		copyItem at "build/Script Libraries/" & packageName & "/" & scriptname & ".scptd" into targetDir with overwriting
 		ohai(scriptname & " installed at" & space & targetPath)
 	end installWithOverwriteAlert
 
 	tell BuildRulesEngine to exec:{}
-	installWithOverwriteAlert("com.kraigparkinson/Hobson", "com.kraigparkinson")	
+	installWithOverwriteAlert("Hobson", packageName)	
 end script 
 
 script installScriptLibraries
@@ -187,18 +188,19 @@ script installScriptLibraries
 	property dir : POSIX path of ¬
 		((path to library folder from user domain) as text) & "Script Libraries"
 	property description : "Install Hobson in" & space & dir
-	
+	property packageName : "com.kraigparkinson"
+
 	on installWithOverwriteAlert(scriptname, targetDirName)
 		set targetDir to joinPath(dir, targetDirName)
 		set targetPath to joinPath(targetDir, scriptname & ".scptd")
 
-		copyItem at "build/Script Libraries/" & scriptname & ".scptd" into targetDir with overwriting
+		copyItem at "build/Script Libraries/" & packageName & "/" & scriptname & ".scptd" into targetDir with overwriting
 		ohai(scriptname & " installed at" & space & targetPath)
 	end installWithOverwriteAlert
 
 	tell BuildScriptLibrary to exec:{}
-	installWithOverwriteAlert("com.kraigparkinson/Default OmniFocus Rules Library", "com.kraigparkinson")	
-	installWithOverwriteAlert("com.kraigparkinson/Creating Flow with OmniFocus Rules", "com.kraigparkinson")	
+	installWithOverwriteAlert("Default OmniFocus Rules Library", "com.kraigparkinson")	
+	installWithOverwriteAlert("Creating Flow with OmniFocus Rules", "com.kraigparkinson")	
 end script
 
 script installHazelScript
