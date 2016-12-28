@@ -1575,6 +1575,19 @@ on makeContextConditionBuilder()
 end makeContextConditionBuilder
 
 script CommandFactory
+	on makeAssignToProjectCommand(aProjectName)
+		script SetProjectCommand
+			property parent : domain's CommandFactory's TaskCommand
+			property newProjectName : aProjectName
+
+			on execute(aTask)
+				set aProject to domain's ProjectRepository's findByName(newProjectName)
+				tell aTask to assignToProject(aProject)
+			end execute
+		end script 
+		return SetProjectCommand		
+	end makeAssignToProjectCommand
+
 	on makeSetTaskNameCommand(aTaskName)
 		script SetTaskNameCommand
 			property parent : domain's CommandFactory's TaskCommand
@@ -1811,6 +1824,42 @@ on makeTaskNameCommandBuilder()
 	return TaskNameCommandBuilder
 end makeTaskNameCommandBuilder
 
+on makeProjectCommandBuilder()
+	script ProjectCommandBuilder
+		property newProject : missing value
+	
+		on assignTo(newText)
+			set newProject to newText
+			return me
+		end assignTo
+	
+		on getContents()
+			set commandList to { }
+		
+			if newProject is not missing value then 
+				set end of commandList to CommandFactory's makeSetTaskNameCommand(newTextValue)
+			end if 
+
+			if textToPrepend is not missing value then 
+				set end of commandList to CommandFactory's makePrependTextToTaskNameCommand(textToPrepend)
+			end if		
+		
+			if textToAppend is not missing value then 
+				set end of commandList to CommandFactory's makeAppendTextToTaskNameCommand(textToAppend)
+			end if		
+
+			if (textToFind is not missing value and textToReplace is not missing value) then 
+				set end of commandList to CommandFactory's makeReplaceTokenFromTaskNameCommand(textToFind, textToReplace)
+			end if		
+			
+			set aCommand to domain's CommandFactory's makeMacroTaskCommand(commandList)
+
+			return aCommand
+		end getContents
+	end script
+	return TaskNameCommandBuilder
+end makeTaskNameCommandBuilder
+
 on makeNoteCommandBuilder()
 	script NoteCommandBuilder
 		property newTextValue : missing value
@@ -1917,6 +1966,8 @@ end script
 on makeRuleCommandBuilder()
 	script RuleCommandBuilder
 		property nameCommandBuilders : { }
+		property deferDateCommandBuilders : { }
+		property dueDateCommandBuilders : { }
 		property noteCommandBuilders : { }
 		
 		property repetitionBuilder : missing value
@@ -1925,6 +1976,26 @@ on makeRuleCommandBuilder()
 			set end of nameCommandBuilders to makeTaskNameCommandBuilder()
 			return last item of nameCommandBuilders
 		end taskName
+
+		on project()
+			set end of projectCommandBuilders to makeProjectCommandBuilder()
+			return last item of projectCommandBuilders			
+		end project
+				
+		on context()
+			set end of contextCommandBuilders to makeContextCommandBuilder()
+			return last item of contextCommandBuilders			
+		end context
+		
+		on deferDate()
+			set end of deferDateCommandBuilders to makeDeferDateCommandBuilder()
+			return last item of deferDateCommandBuilders
+		end deferDate 
+		
+		on dueDate()
+			set end of dueDateCommandBuilders to makeDeferDateCommandBuilder()
+			return last item of dueDateCommandBuilders
+		end deferDate 
 		
 		on changeNote()
 			set end of noteCommandBuilders to makeNoteCommandBuilder()
@@ -1969,6 +2040,7 @@ on makeRuleBase()
 		property completeConditionBuilder : missing value
 		property flagConditionBuilder : missing value
 		property dateAttrBuilders : { }
+		property textAttrBuilders : { }
 		
 		--Context variables
 	
@@ -2043,9 +2115,9 @@ on makeRuleBase()
 			return makeCustomDateBuilder(pName, TaskNameRetrievalStrategy, true)
 		end setDateAttr
 		
-		on textAttr(pName)
+		on setTextAttr(pName)
 			return makeCustomTextBuilder(pName, TaskNameRetrievalStrategy, true)
-		end textAttr
+		end setTextAttr
 		
 		on getDateAttr(pName)
 			--TODO: Figure out how to assign a map to the rule itself, not just a map to go along with the task.			
@@ -2064,6 +2136,26 @@ on makeRuleBase()
 			set dateStrategy to the result
 			set aBuilder to makeDateConditionBuilder(dateStrategy)
 			set end of dateAttrBuilders to aBuilder
+			return aBuilder
+		end getDateAttr
+		
+		on getTextAttr(pName)
+			--TODO: Figure out how to assign a map to the rule itself, not just a map to go along with the task.			
+			script
+				property name_text : pName
+				on getValue(aTask, inputAttributes_map)
+					set attr_text to missing value
+					if (inputAttributes_map's containsValue(name_text))
+						set attr_text to inputAttributes_map's getValue(name_text)
+					end if
+					
+					return attr_text 
+				end getValue
+			end script
+			
+			set textStrategy to the result
+			set aBuilder to makeTextSpecificationBuilder(textStrategy)
+			set end of textAttrBuilders to aBuilder
 			return aBuilder
 		end getDateAttr
 		

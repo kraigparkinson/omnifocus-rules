@@ -37,7 +37,7 @@ script BuildRulesEngine
 	makeScriptBundle from joinPath(sourceDir, "Hobson.applescript") at destinationDir with overwriting
 end script
 
-script BuildScriptLibrary
+script BuildHobsonRuleLibraries
 	property parent : Task(me)
 	property name : "build/library"
 	property description : "Build Script Libraries"
@@ -59,7 +59,7 @@ script BuildOFApplicationScripts
 	property destinationDir : "build/OmniFocus Scripts"
 
 	tell BuildRulesEngine to exec:{}
-	tell BuildScriptLibrary to exec:{}
+	tell BuildHobsonRuleLibraries to exec:{}
 	makeScriptBundle from joinPath(sourceDir, "Process Inbox.applescript") at destinationDir with overwriting
 	makeScriptBundle from joinPath(sourceDir, "Tidy.applescript") at destinationDir with overwriting
 end script
@@ -73,7 +73,7 @@ script BuildHazelScripts
 	property destinationDir : "build/Hazel Scripts"
 	
 	tell BuildRulesEngine to exec:{}
-	tell BuildScriptLibrary to exec:{}	
+	tell BuildHobsonRuleLibraries to exec:{}	
 	makeScriptBundle from joinPath(sourceDir, "OmniFocus Rule Processing Daemon.applescript") at destinationDir with overwriting
 end script
 
@@ -81,7 +81,7 @@ script BuildRules
 	property parent : Task(me)
 	
 	tell BuildRulesEngine to exec:{}
-	tell BuildScriptLibrary to exec:{}
+	tell BuildHobsonRuleLibraries to exec:{}
 	makeScriptBundle from "src/Rule Sets/omnirulefile.applescript" at "build/Rule Sets" with overwriting
 end script
 
@@ -89,7 +89,7 @@ script build
 	property parent : Task(me)
 	property description : "Build all source AppleScript scripts"
 
-	tell BuildScriptLibrary to exec:{}
+	tell BuildHobsonRuleLibraries to exec:{}
 	osacompile(glob({}), "scpt", {"-x"})
 end script
 
@@ -98,7 +98,7 @@ script buildAll
 	property description : "Build all source AppleScript scripts"
 	
 	tell BuildRulesEngine to exec:{}
-	tell BuildScriptLibrary to exec:{}
+	tell BuildHobsonRuleLibraries to exec:{}
 	tell BuildOFApplicationScripts to exec:{}
 	tell BuildHazelScripts to exec:{}
 	tell BuildRules to exec:{}
@@ -141,7 +141,7 @@ script dist
 	property dir : missing value
 	
 	tell clobber to exec:{}
-	tell BuildScriptLibrary to exec:{}
+	tell BuildHobsonRuleLibraries to exec:{}
 	tell BuildOFApplicationScripts to exec:{}
 	tell BuildHazelScripts to exec:{}
 	
@@ -198,7 +198,7 @@ script installScriptLibraries
 		ohai(scriptname & " installed at" & space & targetPath)
 	end installWithOverwriteAlert
 
-	tell BuildScriptLibrary to exec:{}
+	tell BuildHobsonRuleLibraries to exec:{}
 	installWithOverwriteAlert("Default OmniFocus Rules Library", "com.kraigparkinson")	
 	installWithOverwriteAlert("Creating Flow with OmniFocus Rules", "com.kraigparkinson")	
 end script
@@ -288,20 +288,63 @@ script install
 	tell installRules to exec:{}	
 end script
 
+script BuildUnitTests
+	property parent : Task(me)
+	property name : "test/build-unit"
+	property description : "Build unit tests, but do not run them"
+	
+	owarn("Due to bugs in OS X Yosemite, building tests requires ASUnit to be installed.")
+	tell BuildRulesEngine to exec:{}
+	
+	makeScriptBundle from "test/Test Hobson.applescript" at "test" with overwriting
+end script
+
+script BuildHobsonRuleLibrariesTests
+	property parent : Task(me)
+	property name : "test/build-script-library"
+	property description : "Build script library tests, but do not run them"
+	
+	owarn("Due to bugs in OS X Yosemite, building tests requires ASUnit to be installed.")
+	tell BuildHobsonRuleLibraries to exec:{}
+	
+	makeScriptBundle from "test/Test Default OmniFocus Rules Library.applescript" at "test" with overwriting
+	makeScriptBundle from "test/Test Creating Flow with OmniFocus Rules.applescript" at "test" with overwriting
+end script
+
+script BuildOFApplicationScriptTests
+	property parent : Task(me)
+	property name : "test/build-omnifocus-scripts"
+	property description : "Build tests, but do not run them"
+	
+	owarn("Due to bugs in OS X Yosemite, building tests requires ASUnit to be installed.")
+	tell BuildOFApplicationScripts to exec:{}
+	
+	makeScriptBundle from "test/Test Process Inbox.applescript" at "test" with overwriting
+	makeScriptBundle from "test/Test Tidy.applescript" at "test" with overwriting
+end script
+
+script BuildHazelScriptTests
+	property parent : Task(me)
+	property name : "test/build-hazel-scripts"
+	property description : "Build tests, but do not run them"
+	
+	owarn("Due to bugs in OS X Yosemite, building tests requires ASUnit to be installed.")
+	tell BuildHazelScripts to exec:{}
+	
+	makeScriptBundle from "test/Test OmniFocus Rule Processing Daemon.applescript" at "test" with overwriting
+end script
+
 script BuildTests
 	property parent : Task(me)
 	property name : "test/build"
 	property description : "Build tests, but do not run them"
 	
 	owarn("Due to bugs in OS X Yosemite, building tests requires ASUnit to be installed.")
-	tell BuildAll to exec:{}
-	
-	makeScriptBundle from "test/Test Hobson.applescript" at "test" with overwriting
-	makeScriptBundle from "test/Test Default OmniFocus Rules Library.applescript" at "test" with overwriting
-	makeScriptBundle from "test/Test Creating Flow with OmniFocus Rules.applescript" at "test" with overwriting
-	makeScriptBundle from "test/Test OmniFocus Rule Processing Daemon.applescript" at "test" with overwriting
-	makeScriptBundle from "test/Test Process Inbox.applescript" at "test" with overwriting
-	makeScriptBundle from "test/Test Tidy.applescript" at "test" with overwriting
+
+	tell BuildUnitTests to exec:{}
+	tell BuildHobsonRuleLibrariesTests to exec:{}
+	tell BuildOFApplicationScriptTests to exec:{}
+	tell BuildHazelScriptTests to exec:{}	
 end script
 
 script RunUnitTests
@@ -312,7 +355,7 @@ script RunUnitTests
 
 	shell for "open" & space & POSIX path of ((path to home folder) as text) & "test.ofocus"
 
-	tell BuildTests to exec:{}
+	tell BuildUnitTests to exec:{}
 	-- The following causes a segmentation fault unless ASUnit in installed in a shared location
 
 	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Hobson.scptd"))
@@ -327,7 +370,7 @@ script RunRuleTests
 
 	shell for "open" & space & POSIX path of ((path to home folder) as text) & "test.ofocus"
 
-	tell BuildTests to exec:{}
+	tell BuildHobsonRuleLibrariesTests to exec:{}
 
 	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test Default OmniFocus Rules Library.scptd"))
 	run testSuite
@@ -345,7 +388,8 @@ script RunFunctionalTests
 
 	shell for "open" & space & POSIX path of ((path to home folder) as text) & "test.ofocus"
 
-	tell BuildTests to exec:{}
+	tell BuildOFApplicationScriptTests to exec:{}
+	tell BuildHazelScriptTests to exec:{}
 
 	set testSuite to load script POSIX file (joinPath(workingDirectory(), "test/Test OmniFocus Rule Processing Daemon.scptd"))
 	run testSuite

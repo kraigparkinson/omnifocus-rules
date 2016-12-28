@@ -138,7 +138,7 @@ script |Expired Meeting Preparation Rule|
 	script |matches with text in name|
 		property parent : UnitTest(me)
 		
-		set aTask to createInboxTask("|GC| Prepare for your meeting 'Foo'")
+		set aTask to createInboxTask("Prepare for your meeting 'Foo'")
 
 		aTask's dueOn(current date - 1 * days)
 				
@@ -153,7 +153,7 @@ script |Expired Meeting Preparation Rule|
 	script |matches with recurring text in name|
 		property parent : UnitTest(me)
 		
-		set aTask to createInboxTask("|GC| Prepare for your recurring meeting 'Foo'")
+		set aTask to createInboxTask("Prepare for your meeting 'Foo' (recurring)")
 
 		aTask's dueOn(current date - 1 * days)
 				

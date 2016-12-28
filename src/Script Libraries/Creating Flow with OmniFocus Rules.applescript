@@ -84,9 +84,9 @@ script ConvertToDropRule
 		l("[(]")'s ¬
 		customDate(setDateAttr("conversion date")'s aShortDate())'s ¬
 		l(" -> DROP[)] Waiting for response from ")'s ¬
-		customText(textAttr("person")'s anyText())'s ¬
+		customText(setTextAttr("person")'s anyText())'s ¬
 		l(" re: ")'s ¬
-		customText(textAttr("expectation")'s anyText())'s getContents())
+		customText(setTextAttr("expectation")'s anyText())'s getContents())
 
 	match by getDateAttr("conversion date")'s isBefore(current date)'s getContents()
 	
