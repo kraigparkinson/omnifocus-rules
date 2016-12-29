@@ -94,3 +94,19 @@ script ConvertToDropRule
 	command thru (do()'s changeNote()'s prepend("INFO: This task was automatically marked complete by Hobson." & linefeed & linefeed)'s getContents())
 end script
 
+script AutoDeleteRule
+	property parent : rules's makeRuleBase()
+	property name : "Delete expired tasks"
+	
+	match by (taskName()'s match()'s ¬
+		l("[(]")'s ¬
+		customDate(setDateAttr("conversion date")'s aShortDate())'s ¬
+		l(" -> DELETE[)] ")'s ¬
+		customText(setTextAttr("task name")'s anyText())'s getContents())
+
+	match by getDateAttr("conversion date")'s isBefore(current date)'s getContents()
+	
+	command thru (do()'s changeNote()'s prepend("INFO: This task was set for automatic deletion by Hobson." & linefeed & linefeed)'s getContents())
+	command thru (deleteTask())	
+end script
+

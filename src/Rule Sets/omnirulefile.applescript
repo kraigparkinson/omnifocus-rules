@@ -36,6 +36,14 @@ script ProcessBcc
 	command thru (do()'s taskName()'s prepend("Follow up ")) 
 end script
 
+script ExpirableTasks
+	property parent : RuleSet(me)
+	property name : "Expirable Tasks"
+	property target : Rules's ExpirableTasks
+
+	evaluate by cfwof's AutoDeleteRule
+end script
+
 script InboxConfigScript
 	property parent : RuleSet(me)
 	property name : "Process Inbox Tasks"
@@ -45,6 +53,9 @@ script InboxConfigScript
 	evaluate by hoblib's OmniFocusTransportTextParsingRule
 	evaluate by cfwof's TidyConsiderationsRule
 	evaluate by cfwof's AddDailyRepeatRule
+	evaluate by cfwof's AddDailyDeferRule
+	evaluate by cfwof's AddWeeklyRepeatRule
+	evaluate by cfwof's AddWeeklyDeferRule
 	evaluate by hoblib's ExpiredMeetingPreparationRule
 	evaluate by hoblib's ExpiredCheckMeetingParticipationRule	
 end script

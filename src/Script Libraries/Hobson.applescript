@@ -1761,7 +1761,7 @@ script CommandFactory
 			end execute
 		end script
 	end makeAppendTextToNoteCommand
-	
+
 end script --CommandFactory
 
 on makeTaskNameCommandBuilder()
@@ -2110,6 +2110,10 @@ on makeRuleBase()
 		on markCompleted()
 			return domain's CommandFactory's makeMarkCompleteCommand()
 		end markCompleted
+
+		on deleteTask()
+			return domain's CommandFactory's makeDeleteCommand()
+		end deleteTask
 		
 		on setDateAttr(pName)
 			return makeCustomDateBuilder(pName, TaskNameRetrievalStrategy, true)
@@ -2258,6 +2262,18 @@ script TransportTextInboxTasks
 
 	on locateTasks()
 		return domain's taskRepositoryInstance()'s selectUnparsedInboxTasks()
+	end locateTasks
+end script
+
+script ExpirableTasks
+	property parent : makeOmniFocusRuleTarget()
+
+	on defineName()
+		return "Expirable Tasks"
+	end defineName
+
+	on locateTasks()
+		return domain's taskRepositoryInstance()'s selectExpirableTasks()
 	end locateTasks
 end script
 

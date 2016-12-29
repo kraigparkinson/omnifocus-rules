@@ -399,3 +399,96 @@ script |Convert To Drop Rule|
 	end script
 
 end script
+
+script |Delete Expired Tasks Rule| 
+	property parent : registerFixtureOfKind(me, |OmniFocus Document Fixture|)
+	
+	property taskFixtures : { }
+	property contextFixtures : { }
+	property ruleFixture : cfwof's AutoDeleteRule
+	
+	on setUp()
+		continue setUp()
+		set taskFixtures to { }
+		set contextFixtures to { }
+
+		set ruleFixture's conditions to { }
+		set ruleFixture's actions to { }
+	end setUp
+	
+	on tearDown()
+		continue tearDown()
+		repeat with aTask in my taskFixtures
+			domain's taskRepositoryInstance()'s removeTask(aTask)
+		end repeat
+		tell application "OmniFocus"
+			repeat with aContext in my contextFixtures
+				delete aContext
+			end repeat
+		end tell
+	end tearDown
+
+	on createInboxTask(transportText)
+		set newTasks to domain's taskRepositoryInstance()'s addTaskFromTransportText(transportText)
+		set newTask to first item of newTasks
+		set end of taskFixtures to newTask 		
+		return newTask 		
+	end createInboxTask
+	
+	on createContext(name)
+		set newContext to domain's ContextRepository's create(name)
+		set end of contextFixtures to newContext
+		return newContext
+	end createContext
+	
+	script |Should match the task with matching text and the conversion date is passed|
+		property parent : UnitTest(me)
+		
+		set aTask to createInboxTask("(2016-01-01 -> DELETE) Waiting for response from Jeffrey re: stepping down from the throne")
+				
+		tell ruleFixture to run
+		
+		set attrs to collections's makeMap()
+		set matchingResult to ruleFixture's matchTask(aTask, attrs)
+		
+		assert(matchingResult, "Should have matched.")
+		assert(attrs's containsValue("conversion date"), "Should contain a conversion date value")
+		assert(attrs's containsValue("task name"), "Should contain a person value")
+		
+	end script
+
+	script |Should not match the task with matching text and the conversation date is not passed|
+		property parent : UnitTest(me)
+		
+		--TODO make this more robust in case anyone is crazy enough to set their clock forward or we actually pass this date.
+		set aTask to createInboxTask("(2025-01-01 -> DELETE) Waiting for response from Jeffrey re: stepping down from the throne")
+		
+		tell ruleFixture to run
+				
+		set attrs to collections's makeMap()
+		set matchingResult to ruleFixture's matchTask(aTask, attrs)
+		
+		refute(matchingResult, "Should not have matched.")
+	end script
+	
+	script |Should add comment and delete expired tasks|
+		property parent : UnitTest(me)
+		
+		set aTask to createInboxTask("(2016-01-01 -> DELETE) Waiting for response from Jeffrey re: stepping down from the throne")
+		local taskId
+		tell application "OmniFocus"
+			set taskId to aTask's original's id
+		end tell
+		
+		tell ruleFixture to run
+				
+		set attrs to collections's makeMap()
+		tell ruleFixture to processTask(aTask, attrs)
+		
+		assertMissing(domain's taskRepositoryInstance()'s findById(taskId), "Should have been removed.")
+		--assert(aTask's _noteValue() starts with "INFO: This task was automatically marked complete by Hobson." & linefeed & linefeed, "Nite should ave started with expexted value.")		
+		set taskFixtures to (rest of (reverse of taskFixtures))
+--		set taskFixtures to { }
+	end script
+
+end script
